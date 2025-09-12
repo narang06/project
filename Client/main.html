@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>메인 페이지</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.js" integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4=" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        /* 기본 스타일 초기화 및 레이아웃 설정 */
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            height: 100%;
+            overflow: hidden;
+        }
+        #app {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* 사이드 메뉴 스타일 */
+        .sidebar {
+            width: 250px;
+            background-color: #2c3e50;
+            color: white;
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            flex-shrink: 0;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar h2 {
+            margin: 0 0 20px 0;
+            font-size: 1.5em;
+            text-align: center;
+        }
+        .menu-item {
+            padding: 12px 15px;
+            margin: 5px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        .menu-item:hover {
+            background-color: #34495e;
+            transform: translateX(5px);
+        }
+        .menu-item.active {
+            background-color: #3498db;
+            font-weight: bold;
+        }
+
+        /* 메인 콘텐츠 영역 스타일 */
+        .main-content {
+            flex-grow: 1;
+            padding: 30px;
+            overflow-y: auto;
+            background-color: #f0f2f5;
+            box-sizing: border-box;
+        }
+
+        /* 공통 콘텐츠 박스 스타일 */
+        .content-box {
+            background-color: white;
+            padding: 5px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            box-sizing: border-box;
+            margin-bottom: 20px;
+        }
+
+        /* 대시보드 카드 스타일 */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+        }
+        .dashboard-card {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s;
+        }
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+        }
+        .dashboard-card h3 {
+            margin: 0 0 5px 0;
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+        .dashboard-card p {
+            margin: 0;
+            font-size: 2em;
+            font-weight: bold;
+            color: #3498db;
+        }
+        
+        /* 테이블 스타일 */
+        .full-width-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .full-width-table th, .full-width-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .full-width-table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+            color: #555;
+        }
+        .full-width-table tbody tr:hover {
+            background-color: #f9f9f9;
+        }
+        /* 페이징 스타일 */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+            gap: 5px;
+        }
+        .pagination button {
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            background-color: #fff;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .pagination button.active {
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        .pagination button:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        /* 버튼 스타일 */
+        .add-button, .action-button {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+        .add-button {
+            background-color: #3498db;
+            color: white;
+        }
+        .add-button:hover {
+            background-color: #2980b9;
+        }
+        .edit-button {
+            background-color: #f39c12;
+            color: white;
+        }
+        .edit-button:hover {
+            background-color: #e67e22;
+        }
+        .delete-button {
+            background-color: #e74c3c;
+            color: white;
+            margin-left: 5px;
+        }
+        .delete-button:hover {
+            background-color: #c0392b;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="sidebar">
+            <h2>{{ user ? user.NAME + '님 환영합니다!' : '로그인 중...' }}</h2>
+            <div 
+                class="menu-item" 
+                v-for="menu in filteredMenus" 
+                :key="menu.id"
+                :class="{active: currentMenu === menu.id}"
+                @click="selectMenu(menu.id)"
+            >
+                {{ menu.name }}
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div v-if="user && user.ROLE === 10" class="content-box">
+                <div class="header-with-button">
+                    <h2>대시보드</h2>
+                </div>
+                <div class="dashboard-grid">
+                    <div class="dashboard-card">
+                        <h3>총 회원 수</h3>
+                        <p>{{ totalMembers }}명</p>
+                    </div>
+                    <div class="dashboard-card">
+                        <h3>총 매물 현황</h3>
+                        <p>{{ totalProperties }}건</p>
+                    </div>
+                    <div class="dashboard-card">
+                        <h3>오늘 접속자</h3>
+                        <p>{{ dailyVisitors }}명</p>
+                    </div>
+                    <div class="dashboard-card">
+                        <h3>오늘 로그인</h3>
+                        <p>{{ dailyLogins }}건</p>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="currentMenu === 'members'" class="content-box">
+                <div class="header-with-button">
+                    <h2>회원 목록</h2>
+                    <button class="add-button">회원 추가</button>
+                </div>
+                <table class="full-width-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>이름</th>
+                            <th>이메일</th>
+                            <th>역할</th>
+                            <th>상태</th>
+                            <th>관리</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="member in paginatedMembers" :key="member.CLIENT_ID">
+                            <td>{{ member.CLIENT_ID }}</td>
+                            <td>{{ member.NAME }}</td>
+                            <td>{{ member.EMAIL }}</td>
+                            <td>{{ member.ROLE }}</td>
+                            <td>{{ member.STATUS }}</td>
+                            <td>
+                                <button class="action-button edit-button">수정</button>
+                                <button class="action-button delete-button">삭제</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="pagination" v-if="totalPages > 1">
+                    <button @click="changePage(currentPage - 1)" :disabled="currentPage === 1">이전</button>
+                    <button v-for="page in totalPages" :key="page" @click="changePage(page)" :class="{ active: page === currentPage }">
+                        {{ page }}
+                    </button>
+                    <button @click="changePage(currentPage + 1)" :disabled="currentPage === totalPages">다음</button>
+                </div>
+            </div>
+            
+            <div v-else-if="currentMenu === 'properties'" class="content-box">
+                <h2>매물 관리</h2>
+                <p>매물 관리(자신) 페이지</p>
+            </div>
+            <div v-else-if="currentMenu === 'propertySearch'" class="content-box">
+                <h2>매물 검색</h2>
+                <p>매물 검색 페이지</p>
+            </div>
+            <div v-else-if="currentMenu === 'contracts'" class="content-box">
+                <h2>계약 관리</h2>
+                <p>계약 관리 페이지</p>
+            </div>
+            <div v-else-if="currentMenu === 'consultations'" class="content-box">
+                <h2>고객 상담 게시판</h2>
+                <p>고객 상담 게시판 페이지</p>
+            </div>
+            <div v-else-if="currentMenu === 'tax'" class="content-box">
+                <h2>세금 계산기</h2>
+                <p>세금 계산기 페이지</p>
+            </div>
+            <div v-else-if="currentMenu === 'schedule'" class="content-box">
+                <h2>일정 관리</h2>
+                <p>일정 관리 페이지</p>
+            </div>
+            <div v-else-if="currentMenu === 'stats'" class="content-box">
+                <h2>통계/리포트</h2>
+                <p>통계/리포트 페이지</p>
+            </div>
+            <div v-else-if="currentMenu === 'settings'" class="content-box">
+                <h2>개인정보 설정</h2>
+                <p>개인정보 설정 페이지</p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const app = Vue.createApp({
+            data() {
+                return {
+                    menus: [
+                        {id: 'members', name: '회원 관리', roles: [10]},
+                        {id: 'properties', name: '매물 관리', roles: [10, 20]},
+                        {id: 'propertySearch', name: '매물 검색', roles: [20, 30]},
+                        {id: 'contracts', name: '계약 관리', roles: [10, 20, 30]},
+                        {id: 'consultations', name: '고객 상담 게시판', roles: [10, 20, 30]},
+                        {id: 'tax', name: '세금 계산기', roles: [10, 20, 30]},
+                        {id: 'schedule', name: '일정 관리', roles: [10, 20, 30]},
+                        {id: 'stats', name: '통계/리포트', roles: [10]},
+                        {id: 'settings', name: '개인정보 설정', roles: [10, 20, 30]}
+                    ],
+                    currentMenu: '',
+                    user: null, 
+                    totalMembers: 0,
+                    totalProperties: 0,
+                    dailyVisitors: 0,
+                    dailyLogins: 0,
+                    members: [], // 데이터베이스에서 가져온 전체 회원 목록
+                    // 페이징 관련 변수 추가
+                    currentPage: 1,
+                    pageSize: 10
+                }
+            },
+            computed: {
+                filteredMenus() {
+                    if (this.user && this.user.ROLE) {
+                        return this.menus.filter(menu => menu.roles.includes(this.user.ROLE));
+                    }
+                    return [];
+                },
+                currentMenuName() {
+                    const menu = this.menus.find(m => m.id === this.currentMenu);
+                    if (!menu) {
+                        return "대시보드";
+                    }
+                    return menu.name;
+                },
+                menuTitle() {
+                    if (this.user && this.user.ROLE === 10) {
+                        return '관리자 메뉴';
+                    }
+                    return '메인 메뉴';
+                },
+                // 페이징된 회원 목록
+                paginatedMembers() {
+                    const start = (this.currentPage - 1) * this.pageSize;
+                    const end = start + this.pageSize;
+                    return this.members.slice(start, end);
+                },
+                // 전체 페이지 수 계산
+                totalPages() {
+                    return Math.ceil(this.members.length / this.pageSize);
+                }
+            },
+            watch: {
+                currentMenu(newVal, oldVal) {
+                    if (newVal === 'members') {
+                        this.fnList();
+                    }
+                }
+            },
+            methods: {
+                selectMenu(menuId) {
+                    this.currentMenu = menuId;
+                },
+                fnLoginInfo: function() {
+                    let self = this;
+                    const sessionId = sessionStorage.getItem("sessionId");
+                    
+                    if (!sessionId) {
+                        window.location.href = "/Client/index.html"; 
+                        return;
+                    }
+
+                    $.ajax({
+                        url: "http://localhost:3009/user-info",
+                        dataType: "json",
+                        type: "GET",
+                        data: { sessionId: sessionId },
+                        success: function(data) {
+                            if (data && data.length > 0) {
+                                self.user = data[0];
+                                if (self.filteredMenus.length > 0) {
+                                    self.currentMenu = self.filteredMenus[0].id;
+                                }
+                            } else {
+                                window.location.href = "/Client/index.html"; 
+                            }
+                        },
+                        error: function(err) {
+                            console.error("사용자 정보 가져오기 실패:", err);
+                            window.location.href = "/Client/index.html";
+                        }
+                    });
+                },
+                // 회원 목록을 서버에서 가져오는 함수
+                fnList: function () {
+                    let self = this;
+                    $.ajax({
+                        url: "http://localhost:3009/clients",
+                        dataType: "json",
+                        type: "GET",
+                        success: function (data) {
+                            // 전체 회원 목록을 members에 저장
+                            self.members = data;
+                            // 총 회원 수 업데이트
+                            self.totalMembers = data.length;
+                        }
+                    });
+                },
+                // 페이지 변경 함수
+                changePage(page) {
+                    if (page >= 1 && page <= this.totalPages) {
+                        this.currentPage = page;
+                    }
+                }
+            },
+            mounted() {
+                let self = this;
+                self.fnLoginInfo();
+            }
+        });
+
+        app.mount('#app');
+    </script>
+</body>
+</html>
