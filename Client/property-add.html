@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>매물 추가</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+  <style>
+    body { font-family: Arial; background:#f0f2f5; display:flex; justify-content:center; align-items:center; min-height:100vh; }
+    .container { background:#fff; padding:30px; border-radius:10px; box-shadow:0 4px 12px rgba(0,0,0,0.1); width:100%; max-width:500px; }
+    .form-group { margin-bottom:15px; }
+    .form-group label { display:block; margin-bottom:5px; font-weight:bold; }
+    .form-group input, .form-group select, .form-group textarea {
+      width:100%; padding:10px; border:1px solid #ccc; border-radius:5px; box-sizing:border-box;
+    }
+    .submit-btn { background:#3498db; color:#fff; padding:12px; border:none; border-radius:5px; cursor:pointer; width:100%; font-weight:bold; }
+    .submit-btn:hover { background:#2980b9; }
+  </style>
+</head>
+<body>
+    <div id="app" class="container">
+        <h2>매물 추가</h2>
+        <form @submit.prevent="fnAddProperty">
+        <div class="form-group">
+            <label>주소</label>
+            <input type="text" v-model="address" required>
+        </div>
+        <div class="form-group">
+            <label>매물 유형</label>
+            <select v-model="propertyType" required>
+            <option value="아파트">아파트</option>
+            <option value="주택">주택</option>
+            <option value="오피스텔">오피스텔</option>
+            <option value="상가">상가</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>건축년도</label>
+            <input type="number" v-model="buildYear">
+        </div>
+        <div class="form-group">
+            <label>층수</label>
+            <input type="number" v-model="floor">
+        </div>
+        <div class="form-group">
+            <label>면적 (㎡)</label>
+            <input type="number" v-model="area">
+        </div>
+        <div class="form-group">
+            <label>가격 (원)</label>
+            <input type="number" v-model="price" required>
+        </div>
+        <div class="form-group">
+            <label>매매자 선택</label>
+            <select v-model="selectedSellerId">
+                <option value="">선택 안 함</option>
+                <option v-for="seller in sellers" :key="seller.CLIENT_ID" :value="seller.CLIENT_ID">
+                    {{ seller.NAME }}
+                </option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>비고</label>
+            <textarea v-model="remarks"></textarea>
+        </div>
+        <button type="submit" class="submit-btn">매물 등록</button>
+        </form>
+    </div>
+</body>
+</html>
+<script>
+const app = Vue.createApp({
+    data() {
+        return {
+            address: '',
+            propertyType: '',
+            buildYear: '',
+            floor: '',
+            area: '',
+            price: '',
+            remarks: '',
+            sellers: [],
+            selectedSellerId: null
+        };
+    },
+    methods: {
+        fnAddProperty() {
+            let self = this;
+            const param = {
+                address: self.address,
+                propertyType: self.propertyType,
+                buildYear: self.buildYear,
+                floor: self.floor,
+                area: self.area,
+                price: self.price,
+                sellerId: self.selectedSellerId,
+                remarks: self.remarks
+            };
+
+            $.ajax({
+                url: "http://localhost:3009/properties/insert",
+                type: "GET",
+                dataType: "json",
+                data: param,
+                success: function(data) {
+                    alert("매물이 등록되었습니다!");
+                    location.href = "main.html?menu=properties";
+                },
+                error: function(err) {
+                    console.error(err);
+                    alert("등록 실패");
+                }
+            });
+        },
+        fetchSellers() {
+            let self = this;
+            $.ajax({
+                url: "http://localhost:3009/clients",
+                type: "GET",
+                dataType: "json",
+                success: function(data) {
+                    self.sellers = data.list.filter(member => member.ROLE === 20);
+                }
+            });
+        }
+    },
+    mounted() {
+        let self = this;
+        self.fetchSellers();
+    }
+});
+
+app.mount('#app');
+</script>

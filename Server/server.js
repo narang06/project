@@ -36,16 +36,19 @@ app.get('/', (req, res) => {
   res.send('Hello World');
 });
 
+// 회원 가입
 app.get('/clients/insert', async (req, res) => {
     const { 
         username,
         password,
         name,
+        nickname,
         phone,
         email,
         currentAddress,
         birthDate,
-        gender
+        gender,
+        role
     } = req.query;
 
     try {
@@ -55,6 +58,7 @@ app.get('/clients/insert', async (req, res) => {
                 USERNAME,
                 PASSWORD,
                 NAME,
+                NICKNAME,
                 PHONE_NUMBER,
                 EMAIL,
                 CURRENT_ADDRESS,
@@ -68,6 +72,7 @@ app.get('/clients/insert', async (req, res) => {
                 :username,
                 :password,
                 :name,
+                :nickname,
                 :phone,
                 :email,
                 :currentAddress,
@@ -81,13 +86,14 @@ app.get('/clients/insert', async (req, res) => {
                 username,
                 password,
                 name,
+                nickname,
                 phone,
                 email,
                 currentAddress,
                 birthDate,
                 gender,
-                role: 1,               // 기본 권한 예: 1 = 일반 회원 추후 권한은 관리자가 변경 가능하게
-                status: 'ACTIVE'       // 기본 상태 예: 'ACTIVE'
+                role,               
+                status: '활성'
             },
             { autoCommit: true }
         );
@@ -99,12 +105,13 @@ app.get('/clients/insert', async (req, res) => {
     }
 });
 
-app.get('/clients/check-username', async (req, res) => { // 아이디 중복 체크
+//아이디 중복 체크
+app.get('/clients/check-username', async (req, res) => {
     const { username } = req.query;
 
     try {
         const result = await connection.execute(
-            `SELECT COUNT(*) AS CNT FROM CLIENTS WHERE username = :username`,
+            `SELECT COUNT(*) AS CNT FROM CLIENTS WHERE USERNAME = :username`,
             [username]
         );
 
@@ -119,7 +126,7 @@ app.get('/clients/check-username', async (req, res) => { // 아이디 중복 체
         res.status(500).send('Server error');
     }
 });
-
+// 로그인 
 app.get('/login', async (req, res) => {
   const { username, pwd } = req.query;
   let query = `SELECT * FROM CLIENTS WHERE USERNAME = '${username}' AND PASSWORD = '${pwd}'`
@@ -144,12 +151,12 @@ app.get('/login', async (req, res) => {
   }
 });
 
+// 로그인 유저 정보
 app.get('/user-info', async (req, res) => {
     const { sessionId } = req.query;
     if (!sessionId) {
         return res.status(400).send('Session ID is required');
     }
-
     try {
         const query = `SELECT CLIENT_ID, NAME, ROLE, STATUS FROM CLIENTS WHERE CLIENT_ID = :sessionId`;
         const result = await connection.execute(query, [sessionId]);
@@ -168,6 +175,219 @@ app.get('/user-info', async (req, res) => {
         res.status(500).send('Error fetching user info');
     }
 });
+
+// 회원 목록 불러오기
+app.get('/clients', async (req, res) => {
+  const { } = req.query;
+  try {
+    const result = await connection.execute(`SELECT * FROM CLIENTS`);
+    const columnNames = result.metaData.map(column => column.name);
+    // 쿼리 결과를 JSON 형태로 변환
+    const rows = result.rows.map(row => {
+      // 각 행의 데이터를 컬럼명에 맞게 매핑하여 JSON 객체로 변환
+      const obj = {};
+      columnNames.forEach((columnName, index) => {
+        obj[columnName] = row[index];
+      });
+      return obj;
+    });
+    res.json({
+        result : "success",
+        list : rows
+    });
+  } catch (error) {
+    console.error('Error executing query', error);
+    res.status(500).send('Error executing query');
+  }
+});
+
+// 회원 정보 삭제
+app.get('/clients/delete', async (req, res) => {
+  const { clientId } = req.query;
+
+  try {
+    await connection.execute(
+      `DELETE FROM CLIENTS WHERE CLIENT_ID = '${clientId}'`,
+      [],
+      { autoCommit: true }
+    );
+    res.json({
+        result : "success"
+    });
+  } catch (error) {
+    console.error('Error executing insert', error);
+    res.status(500).send('Error executing insert');
+  }
+});
+
+// 회원정보를 가져오기
+app.get('/client/info', async (req, res) => {
+  const { clientId } = req.query;
+  try {
+    const result = await connection.execute(
+      `SELECT C.*, USERNAME "username", NAME "name", PHONE_NUMBER "phoneNumber", CURRENT_ADDRESS "cAddr", GENDER "gender", EMAIL "email", ROLE "role", STATUS "status", `
+      + `PREFERRED_PROPERTY_TYPE "prePropertyType", BUDGET "budget", PREFERRED_AREA "preArea", TO_CHAR(DATE_OF_BIRTH, 'YYYY-MM-DD') "birth", NICKNAME "nickName" ` 
+      + `FROM CLIENTS C `
+      + `WHERE CLIENT_ID = ${clientId}`
+    );
+    const columnNames = result.metaData.map(column => column.name);
+    // 쿼리 결과를 JSON 형태로 변환
+    const rows = result.rows.map(row => {
+      // 각 행의 데이터를 컬럼명에 맞게 매핑하여 JSON 객체로 변환
+      const obj = {};
+      columnNames.forEach((columnName, index) => {
+        obj[columnName] = row[index];
+      });
+      return obj;
+    });
+    // 리턴
+    res.json({
+        result : "success",
+        info : rows[0]
+    });
+  } catch (error) {
+    console.error('Error executing query', error);
+    res.status(500).send('Error executing query');
+  }
+});
+
+//회원정보 업데이트
+app.get('/client/update', async (req, res) => {
+  const {
+    clientId,
+    name,
+    email,
+    nickName,
+    phoneNumber,
+    birth,
+    cAddr,
+    gender,
+    role,
+    status,
+    budget,
+    preArea,
+    prePropertyType
+  } = req.query;
+
+  try {
+    let query = `UPDATE CLIENTS SET 
+      NAME = '${name}',
+      EMAIL = '${email}',
+      NICKNAME = '${nickName}',
+      PHONE_NUMBER = '${phoneNumber}',
+      DATE_OF_BIRTH = '${birth}',
+      CURRENT_ADDRESS = '${cAddr}',
+      GENDER = '${gender}',
+      ROLE = '${role}',
+      STATUS = '${status}',
+      BUDGET = '${budget}',
+      PREFERRED_AREA = '${preArea}',
+      PREFERRED_PROPERTY_TYPE = '${prePropertyType}'
+      WHERE CLIENT_ID = ${clientId}`;
+    
+    await connection.execute(query, [], { autoCommit: true });
+
+    res.json({
+      result: "success"
+    });
+  } catch (error) {
+    console.error('Error executing update', error);
+    res.status(500).send('Error executing update');
+  }
+});
+
+// 매물 정보
+app.get('/properties', async (req, res) => {
+  const { } = req.query;
+  let query = `SELECT PROPERTY_ID, ADDRESS, PROPERTY_TYPE, AREA, PRICE, STATUS FROM PROPERTIES ORDER BY PROPERTY_ID DESC`
+  try {
+    const result = await connection.execute(query);
+    const columnNames = result.metaData.map(column => column.name);
+    // 쿼리 결과를 JSON 형태로 변환
+    const rows = result.rows.map(row => {
+      // 각 행의 데이터를 컬럼명에 맞게 매핑하여 JSON 객체로 변환
+      const obj = {};
+      columnNames.forEach((columnName, index) => {
+        obj[columnName] = row[index];
+      });
+      return obj;
+    });
+    res.json({
+        result : "success",
+        list : rows
+    });
+  } catch (error) {
+    console.error('Error executing query', error);
+    res.status(500).send('Error executing query');
+  }
+});
+
+// 매물 삭제
+app.get('/properties/delete', async (req, res) => {
+  const { propertyId } = req.query;
+
+  try {
+    await connection.execute(
+      `DELETE FROM PROPERTIES WHERE PROPERTY_ID = '${propertyId}'`,
+      [],
+      { autoCommit: true }
+    );
+    res.json({
+        result : "success"
+    });
+  } catch (error) {
+    console.error('Error executing insert', error);
+    res.status(500).send('Error executing insert');
+  }
+});
+
+// 매물 추가
+app.get('/properties/insert', async (req, res) => {
+  const { address, propertyType, buildYear, floor, area, price, sellerId, remarks } = req.query;
+
+  try {
+    const query = `
+      INSERT INTO PROPERTIES 
+      (PROPERTY_ID, ADDRESS, PROPERTY_TYPE, BUILD_YEAR, FLOOR, AREA, PRICE, SELLER_ID, REMARKS)
+      VALUES (PROPERTIES_SEQ.NEXTVAL, :address, :propertyType, :buildYear, :floor, :area, :price, :sellerId, :remarks)
+      `;
+
+    await connection.execute(query, {
+      address,
+      propertyType,
+      buildYear,
+      floor,
+      area,
+      price,
+      sellerId,
+      remarks
+    }, { autoCommit: true });
+
+    res.json({ result: "success" });
+  } catch (error) {
+    console.error('Error inserting property', error);
+    res.status(500).send('Error inserting property');
+  }
+});
+
+// 부동산 매매자 검색
+app.get('/clients/sellers', async (req, res) => {
+    try {
+        const query = `SELECT CLIENT_ID, NAME FROM CLIENTS WHERE ROLE = 20`;
+        const result = await connection.execute(query);
+        const columnNames = result.metaData.map(col => col.name);
+        const rows = result.rows.map(row => {
+            const obj = {};
+            columnNames.forEach((colName, idx) => obj[colName] = row[idx]);
+            return obj;
+        });
+        res.json({ result: "success", list: rows });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("서버 오류");
+    }
+});
+
 
 // 서버 시작
 app.listen(3009, () => {

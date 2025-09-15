@@ -77,6 +77,20 @@ h2 {
     margin: 0;
     width: auto;
 }
+.role-inline {
+    display: flex;
+    gap: 10px;         
+    align-items: center;
+    flex-wrap: nowrap;   
+}
+.role-inline label {
+    white-space: nowrap; 
+    font-weight: normal;
+}
+.role-inline input[type="radio"] {
+    margin: 0;
+    width: auto;
+}
 .button-inline {
     display: flex;
     gap: 10px;
@@ -103,13 +117,13 @@ h2 {
 </head>
 <body>
 <div id="app" class="container">
-    <h2>회원가입</h2>
+    <h2>{{ isAdminMode ? '회원 추가' : '회원 가입' }}</h2>
     <form @submit.prevent="fnSignUp">
         <div class="form-section">
             <h3>필수 정보</h3>
             <div class="form-group button-inline">
-                <input type="text" placeholder="아이디를 입력하세요" v-model="username" required>
-                <button type="button" class="check-button" @click="checkUsername">중복 체크</button>
+                <input type="text" placeholder="아이디를 입력하세요" v-model="userName" required>
+                <button type="button" class="check-button" @click="checkUserName">중복 체크</button>
             </div>
             <div class="form-group">
                 <input type="password" placeholder="비밀번호" v-model="password" required>
@@ -119,6 +133,9 @@ h2 {
             </div>
             <div class="form-group">
                 <input type="text" placeholder="이름" v-model="name" required>
+            </div>
+            <div class="form-group">
+                <input type="text" placeholder="닉네임" v-model="nickName" required>
             </div>
             <div class="form-group">
                 <div style="display: flex; gap: 10px;">
@@ -161,11 +178,17 @@ h2 {
                 <input type="date" v-model="birthDate" required>
             </div>
             <div class="form-group gender-inline">
+                <span>성별: </span>
                 <input type="radio" id="male" value="M" v-model="gender"><label for="male">남성</label>
                 <input type="radio" id="female" value="F" v-model="gender"><label for="female">여성</label>
             </div>
+            <div class="form-group role-inline">
+                <span style="min-width: 80px;">회원 분류: </span>
+                <input type="radio" id="role30" value="30" v-model="role"><label for="role30">일반 회원</label>
+                <input type="radio" id="role20" value="20" v-model="role"><label for="role20">부동산 매매자</label>
+                <input v-if="isAdminMode" type="radio" id="role10" value="10" v-model="role"><label for="role10">관리자</label>
+            </div>
         </div>
-
         <div class="form-section optional">
             <h3>선택 정보</h3>
             <div class="form-group">
@@ -175,13 +198,15 @@ h2 {
                 <select v-model="budget">
                     <option value="">선택 안 함</option>
                     <option value="5억 미만">5억 미만</option>
-                    <option value="5억 ~ 10억">5억 ~ 10억</option>
+                    <option value="5억 ~ 10억">5억 ~ 10억 미만</option>
                     <option value="10억 이상">10억 이상</option>
                 </select>
             </div>
         </div>
 
-        <button type="button" class="register-button" @click="fnSignUp">회원가입 완료</button>
+        <button type="button" class="register-button" @click="fnSignUp">
+            {{ isAdminMode ? '회원 추가 완료' : '회원가입 완료' }}
+        </button>
     </form>
 </div>
 </body>
@@ -190,7 +215,7 @@ h2 {
 const app = Vue.createApp({
     data() {
         return {
-            username: '',
+            userName: '',
             password: '',
             confirmPassword: '',
             name: '',
@@ -201,14 +226,18 @@ const app = Vue.createApp({
             currentAddress: '',
             birthDate: '',
             gender: '',
+            role: '', 
             preferredLocation: '',
             budget: '',
-            isUsernameChecked: false 
+            nickName : '',
+            isUsernameChecked: false,
+            isAdminMode: false
         };
     },
     methods: {
-        checkUsername() {
-            if(!this.username) {
+        checkUserName() {
+            let self = this;
+            if(!self.userName) {
                 alert('아이디를 입력해주세요.');
                 return;
             }
@@ -216,45 +245,46 @@ const app = Vue.createApp({
                 url: "http://localhost:3009/clients/check-username",
                 type: "GET",
                 dataType: "json",
-                data: { username: this.username },
+                data: { username: self.userName },
                 success: (data) => {
                     if(data.exists) {
                         alert('이미 사용 중인 아이디입니다.');
-                        this.isUsernameChecked = false;
+                        self.isUsernameChecked = false;
                     } else {
                         alert('사용 가능한 아이디입니다.');
-                        this.isUsernameChecked = true;
+                        self.isUsernameChecked = true;
                     }
                 },
                 error: (err) => {
                     console.error(err);
                     alert('서버 오류 발생');
-                    this.isUsernameChecked = false;
+                    self.isUsernameChecked = false;
                 }
             });
         },
 
         validate() {
-            if(!this.isUsernameChecked) {
+            let self = this;
+            if(!self.isUsernameChecked) {
                 alert('아이디 중복 확인을 먼저 해주세요!');
                 return false;
             }
 
             const namePattern = /^[가-힣a-zA-Z]+$/;
-            if(!namePattern.test(this.name)) { alert('이름은 한글 또는 영어만 가능합니다.'); return false; }
+            if(!namePattern.test(self.name)) { alert('이름은 한글 또는 영어만 가능합니다.'); return false; }
 
             const numberPattern = /^[0-9]+$/;
-            if(!numberPattern.test(this.phoneMiddle) || !numberPattern.test(this.phoneLast)) {
+            if(!numberPattern.test(self.phoneMiddle) || !numberPattern.test(self.phoneLast)) {
                 alert('연락처는 숫자만 입력해주세요.');
                 return false;
             }
 
             const specialPattern = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/;
-            if(!specialPattern.test(this.password)) { alert('비밀번호에는 특수문자가 필요합니다.'); return false; }
+            if(!specialPattern.test(self.password)) { alert('비밀번호에는 특수문자가 필요합니다.'); return false; }
 
-            if(this.password !== this.confirmPassword) { alert('비밀번호가 일치하지 않습니다.'); return false; }
+            if(self.password !== self.confirmPassword) { alert('비밀번호가 일치하지 않습니다.'); return false; }
 
-            if(!this.username || !this.password || !this.name || !this.phonePrefix || !this.phoneMiddle || !this.phoneLast || !this.email || !this.currentAddress || !this.birthDate || !this.gender) {
+            if(!self.userName || !self.password || !self.name || !self.phonePrefix || !self.phoneMiddle || !self.phoneLast || !self.email || !self.currentAddress || !self.birthDate || !self.gender) {
                 alert('필수 항목을 모두 입력해주세요.');
                 return false;
             }
@@ -263,20 +293,23 @@ const app = Vue.createApp({
         },
 
         fnSignUp() {
-            if(!this.validate()) return;
+            let self = this;
+            if(!self.validate()) return;
 
-            const fullPhoneNumber = `${this.phonePrefix}-${this.phoneMiddle}-${this.phoneLast}`;
+            const fullPhoneNumber = `${self.phonePrefix}-${self.phoneMiddle}-${self.phoneLast}`;
             const param = {
-                username: this.username,
-                password: this.password,
-                name: this.name,
+                username: self.userName,
+                password: self.password,
+                name: self.name,
+                nickname: self.nickName,
                 phone: fullPhoneNumber,
-                email: this.email,
-                currentAddress: this.currentAddress,
-                birthDate: this.birthDate,
-                gender: this.gender,
-                preferredLocation: this.preferredLocation || null,
-                budget: this.budget || null
+                email: self.email,
+                currentAddress: self.currentAddress,
+                birthDate: self.birthDate,
+                gender: self.gender,
+                role: self.role,
+                preferredLocation: self.preferredLocation || null,
+                budget: self.budget || null
             };
 
             $.ajax({
@@ -285,29 +318,24 @@ const app = Vue.createApp({
                 dataType: "json",
                 data: param,
                 success: (data) => {
-                    alert('회원가입 완료!');
-                    console.log(data);
-                    // 초기화
-                    this.username = '';
-                    this.password = '';
-                    this.confirmPassword = '';
-                    this.name = '';
-                    this.phonePrefix = '010';
-                    this.phoneMiddle = '';
-                    this.phoneLast = '';
-                    this.email = '';
-                    this.currentAddress = '';
-                    this.birthDate = '';
-                    this.gender = '';
-                    this.preferredLocation = '';
-                    this.budget = '';
-                    this.isUsernameChecked = false;
+                    alert(this.isAdminMode ? '회원 추가 완료!' : '회원가입 완료!');
+                    if(this.isAdminMode){
+                        window.location.href = "main.html"; // 관리자 모드면 메인으로
+                    } else {
+                        window.location.href = "index.html"; // 일반 회원 가입
+                    }
                 },
                 error: (err) => {
                     console.error(err);
                     alert('서버 오류 발생');
                 }
             });
+        }
+    },
+    mounted() {
+        const params = new URLSearchParams(window.location.search);
+        if(params.get('mode') === 'admin'){
+            this.isAdminMode = true;
         }
     }
 });

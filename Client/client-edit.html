@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>회원 정보 수정</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.js" integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4=" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        /* 전체 폼 컨테이너의 기본 레이아웃 */
+        .form-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            max-width: 400px;
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+
+        /* 폼 컨테이너 내의 각 항목(div)의 기본 레이아웃 */
+        .form-container > div {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-container label {
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-container input, .form-container select {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .form-container button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .form-container button:first-of-type {
+            background-color: #3498db;
+            color: white;
+        }
+
+        /* 성별 라디오 버튼 한 줄 정렬 */
+        .gender-inline {
+            flex-direction: row !important;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .gender-inline label {
+            margin-bottom: 0;
+            font-weight: normal;
+        }
+
+        /* 전화번호 필드 전용 스타일 */
+        .phone-container {
+            /* 부모 요소인 .form-container > div의 flex-direction: column; 규칙을 무시하도록 설정 */
+            flex-direction: row; 
+            align-items: center;
+            gap: 5px;
+            /* 전화번호 필드 자체의 높이를 부모와 동일하게 유지 */
+            height: 100%;
+            /* input과 select가 한 줄에 나오도록 설정 */
+            display: flex; 
+        }
+        
+        .phone-container select {
+            width: 80px;
+        }
+
+        .phone-container input {
+            width: 80px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        
+        <div class="form-container">
+            <h2>회원정보 수정</h2>
+            <div>
+                <label for="username">아이디</label>
+                <input type="text" id="username" v-model="info.USERNAME" disabled>
+            </div>
+            <div>
+                <label for="name">이름</label>
+                <input type="text" id="name" v-model="info.NAME">
+            </div>
+            <div>
+                <label for="email">이메일</label>
+                <input type="email" id="email" v-model="info.EMAIL">
+            </div>
+            <div>
+                <label for="nickName">닉네임</label>
+                <input type="text" id="nickName" v-model="info.NICKNAME">
+            </div>
+            <div>
+                <label for="phone">전화번호</label>
+                <div class="phone-container">
+                    <select v-model="phoneFirst" required>
+                    <option value="010">010</option>
+                    <option value="011">011</option>
+                    <option value="017">017</option>
+                    <option value="019">019</option>
+                    </select>
+                    <span>-</span>
+                    <input type="text" v-model="phoneMiddle" maxlength="4" required>
+                    <span>-</span>
+                    <input type="text" v-model="phoneLast" maxlength="4" required>
+                </div>
+            </div>
+            <div>
+                <label for="birthDate">생년월일</label>
+                <input type="date" id="birthDate" v-model="info.birth" required>
+            </div>
+            <div>
+                <label for="address">주소</label>
+                <select id="address" v-model="info.CURRENT_ADDRESS" required>
+                    <option value="">주소 선택</option>
+                    <option value="서울특별시">서울특별시</option>
+                    <option value="부산광역시">부산광역시</option>
+                    <option value="대구광역시">대구광역시</option>
+                    <option value="인천광역시">인천광역시</option>
+                    <option value="광주광역시">광주광역시</option>
+                    <option value="대전광역시">대전광역시</option>
+                    <option value="울산광역시">울산광역시</option>
+                    <option value="세종특별자치시">세종특별자치시</option>
+                    <option value="경기도">경기도</option>
+                    <option value="강원도">강원도</option>
+                    <option value="충청북도">충청북도</option>
+                    <option value="충청남도">충청남도</option>
+                    <option value="전라북도">전라북도</option>
+                    <option value="전라남도">전라남도</option>
+                    <option value="경상북도">경상북도</option>
+                    <option value="경상남도">경상남도</option>
+                    <option value="제주특별자치도">제주특별자치도</option>
+                </select>
+            </div>
+            <div>
+                <label for="gender">성별</label>
+                <div class="gender-inline">
+                    <input type="radio" id="male" value="M" v-model="info.GENDER"><label for="male">남성</label>
+                    <input type="radio" id="female" value="F" v-model="info.GENDER"><label for="female">여성</label>
+                </div>
+            </div>
+            <div>
+                <label for="role">역할</label>
+                <select id="role" v-model="info.ROLE">
+                    <option value="10">관리자</option>
+                    <option value="20">부동산 매매자</option>
+                    <option value="30">일반 고객</option>
+                </select>
+            </div>
+            <div>
+                <label for="status">상태</label>
+                <select id="status" v-model="info.status">
+                    <option value="활성">활성</option>
+                    <option value="비활성">비활성</option>
+                    <option value="탈퇴">탈퇴</option>
+                </select>
+            </div>
+            <div>
+                <label for="budget">예산</label>
+                <select v-model="info.BUDGET">
+                    <option value="">선택 안 함</option>
+                    <option value="5억 미만">5억 미만</option>
+                    <option value="5억 ~ 10억">5억 ~ 10억 미만</option>
+                    <option value="10억 이상">10억 이상</option>
+                </select>
+            </div>
+            <div>
+                <label for="preArea">선호 지역</label>
+                <input type="text" id="preArea" v-model="info.preArea">
+            </div>
+            <div>
+                <label for="prePropertyType">선호 매물</label>
+                <select id="prePropertyType" v-model="info.prePropertyType">
+                    <option value="">선택 안 함</option>
+                    <option value="아파트">아파트</option>
+                    <option value="단독주택">단독주택</option>
+                    <option value="빌라">빌라</option>
+                    <option value="오피스텔">오피스텔</option>
+                    <option value="기타">기타</option>
+                </select>
+            </div>
+            <button @click="fnUpdate">수정 완료</button>
+            <button @click="fnCancel">취소</button>
+        </div>
+    </div>
+</body>
+</html>
+<script>
+    const app = Vue.createApp({
+        data() {
+            return {
+                // 변수 - (key : value)
+                clientId: '',
+                info: {}
+            };
+        },
+        methods: {
+            // 회원정보 불러오기
+            fnInfo: function () {
+                let self = this;
+                let param = {clientId : self.clientId};
+                $.ajax({
+                    url: "http://localhost:3009/client/info",
+                    dataType: "json",
+                    type: "GET",
+                    data: param,
+                    success: function (data) {
+                        if (data.info) {
+                            self.info = data.info;
+                            console.log(self.info);
+                            
+                            // 전화번호 가져오기
+                            if (self.info.PHONE_NUMBER) {
+                                const phoneParts = self.info.PHONE_NUMBER.split('-');
+                                if (phoneParts.length === 3) {
+                                    self.phoneFirst = phoneParts[0];
+                                    self.phoneMiddle = phoneParts[1];
+                                    self.phoneLast = phoneParts[2];
+                                }
+                            }
+                        } else {
+                            console.error('회원 정보를 불러오는 데 실패했습니다.');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('회원 정보를 불러오는 중 오류 발생:', error);
+                    }
+                });
+            },
+            // 정보수정완료 함수
+            fnUpdate: function () {
+                let self = this;
+
+                if (!self.info.NAME || 
+                    !self.info.EMAIL || 
+                    !self.info.NICKNAME ||
+                    !self.phoneFirst || !self.phoneMiddle || !self.phoneLast ||
+                    !self.info.DATE_OF_BIRTH || 
+                    !self.info.CURRENT_ADDRESS || 
+                    !self.info.GENDER) {
+                        alert('이름, 이메일, 닉네임, 전화번호, 생년월일, 주소, 성별은 필수 입력 항목입니다.');
+                        return; 
+                }
+                let param = {
+                    clientId: self.info.CLIENT_ID,
+                    name: self.info.NAME,
+                    email: self.info.EMAIL,
+                    nickName: self.info.NICKNAME,
+                    phoneNumber: `${self.phoneFirst}-${self.phoneMiddle}-${self.phoneLast}`,
+                    birth: self.info.birth,
+                    cAddr: self.info.CURRENT_ADDRESS,
+                    gender: self.info.GENDER,
+                    role: self.info.ROLE,
+                    status: self.info.status,
+                    budget: self.info.BUDGET,
+                    preArea: self.info.preArea,
+                    prePropertyType: self.info.prePropertyType
+                };
+                $.ajax({
+                    url: "http://localhost:3009/client/update",
+                    dataType: "json",
+                    type: "GET",
+                    data: param,
+                    success: function (data) {
+                        alert("수정되었습니다.");
+                        location.href="main.html";
+                    }
+                });
+            },
+            fnCancel : function(){
+                location.href="main.html";
+            }
+        }, // methods
+        mounted() {
+            // 처음 시작할 때 실행되는 부분
+            let self = this;
+            const queryParams = new URLSearchParams(window.location.search);
+            self.clientId = queryParams.get('clientId') || ''; 
+
+            if(self.clientId != ""){
+                self.fnInfo();
+            }
+        }
+    });
+
+    app.mount('#app');
+</script>
