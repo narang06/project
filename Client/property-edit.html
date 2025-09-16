@@ -178,87 +178,86 @@
 </body>
 </html>
 <script>
-const app = Vue.createApp({
-    data() {
-        return {
-            info: {}, // 매물 정보
-            sellers: [], // 매매자 목록
-            propertyId: ''
-        };
-    },
-    methods: {
-        fetchSellers() {
-            let self = this;
-            $.ajax({
-                url: "http://localhost:3009/clients",
-                type: "GET",
-                dataType: "json",
-                success: function(data) {
-                    self.sellers = data.list.filter(member => member.ROLE === 20);
-                }
-            });
-        },
-        fnCancel() {
-            location.href = "main.html?menu=properties";
-        },
-        // 매물 정보 수정 함수
-        fnEditProperty() {
-            let self = this;
-
-            const param = {
-                propertyId: self.info.PROPERTY_ID,
-                address: self.info.ADDRESS,
-                propertyType: self.info.PROPERTY_TYPE,
-                buildYear: self.info.BUILD_YEAR,
-                floor: self.info.FLOOR,
-                area: self.info.AREA,
-                price: self.info.PRICE,
-                sellerId: self.info.SELLER_ID,
-                status: self.info.STATUS,
-                remarks: self.info.REMARKS
+    const app = Vue.createApp({
+        data() {
+            return {
+                info: {}, // 매물 정보
+                sellers: [], // 매매자 목록
+                propertyId: ''
             };
-            $.ajax({
-                url: "http://localhost:3009/properties/update",
-                type: "GET",
-                dataType: "json",
-                data: param,
-                success: function(data) {
-                    alert("매물 정보가 수정되었습니다!");
-                    location.href = "main.html?menu=properties";
-                },
-                error: function(err) {
-                    console.error(err);
-                    alert("수정 실패");
-                }
-            });
         },
-        // 매물 정보 불러오기 함수
-        fnFetchProperty() {
-            let self = this;
-            const params = new URLSearchParams(window.location.search);
-            self.propertyId = params.get('propertyId') || '';
-            if (!self.propertyId) return;
+        methods: {
+            fetchSellers() {
+                let self = this;
+                $.ajax({
+                    url: "http://localhost:3009/clients",
+                    type: "GET",
+                    dataType: "json",
+                    success: function(data) {
+                        self.sellers = data.list.filter(member => member.ROLE === 20);
+                    }
+                });
+            },
+            fnCancel() {
+                location.href = "main.html?menu=properties";
+            },
+            // 매물 정보 수정 함수
+            fnEditProperty() {
+                let self = this;
 
-            $.ajax({
-                url: "http://localhost:3009/properties/info",
-                type: "GET",
-                dataType: "json",
-                data: { propertyId: self.propertyId },
-                success: function(data) {
-                    self.info = data.info;
-                },
-                error: function(err) {
-                    console.error(err);
-                    alert("매물 정보를 불러오지 못했습니다.");
-                }
-            });
+                const param = {
+                    propertyId: self.info.PROPERTY_ID,
+                    address: self.info.ADDRESS,
+                    propertyType: self.info.PROPERTY_TYPE,
+                    buildYear: self.info.BUILD_YEAR,
+                    floor: self.info.FLOOR,
+                    area: self.info.AREA,
+                    price: self.info.PRICE,
+                    sellerId: self.info.SELLER_ID,
+                    status: self.info.STATUS,
+                    remarks: self.info.REMARKS
+                };
+                $.ajax({
+                    url: "http://localhost:3009/properties/update",
+                    type: "GET",
+                    dataType: "json",
+                    data: param,
+                    success: function(data) {
+                        alert("매물 정보가 수정되었습니다!");
+                        location.href = "main.html?menu=properties";
+                    },
+                    error: function(err) {
+                        console.error(err);
+                        alert("수정 실패");
+                    }
+                });
+            },
+            // 매물 정보 불러오기 함수
+            fnFetchProperty() {
+                let self = this;
+                const params = new URLSearchParams(window.location.search);
+                self.propertyId = params.get('propertyId') || '';
+                if (!self.propertyId) return;
+
+                $.ajax({
+                    url: "http://localhost:3009/properties/info",
+                    type: "GET",
+                    dataType: "json",
+                    data: { propertyId: self.propertyId },
+                    success: function(data) {
+                        self.info = data.info;
+                    },
+                    error: function(err) {
+                        console.error(err);
+                        alert("매물 정보를 불러오지 못했습니다.");
+                    }
+                });
+            }
+        },
+        mounted() {
+            this.fetchSellers();
+            this.fnFetchProperty();
         }
-    },
-    mounted() {
-        this.fetchSellers();
-        this.fnFetchProperty();
-    }
-});
-
-app.mount('#app');
+    });
+    app.mount('#app');
 </script>

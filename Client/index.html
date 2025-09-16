@@ -6,127 +6,127 @@
     <title>부동산 관리 시스템</title>
     <script src="https://code.jquery.com/jquery-3.7.1.js" integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4=" crossorigin="anonymous"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-<style>
-    body {
-        font-family: Arial, sans-serif;
-        background-color: #f0f2f5;
-        margin: 0;
-        padding: 0;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        min-height: 100vh;
-    }
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
 
-    .main-container {
-        display: flex;
-        flex-direction: column;
-        width: 100%;
-        max-width: 900px;
-        padding: 20px;
-        box-sizing: border-box;
-    }
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 900px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
 
-    header.intro {
-        text-align: center;
-        margin-bottom: 40px;
-        padding: 20px;
-        background-color: #fff;
-        border-radius: 10px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    }
+        header.intro {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
 
-    header.intro h1 {
-        font-size: 2.5em;
-        color: #333;
-        margin-bottom: 10px;
-    }
+        header.intro h1 {
+            font-size: 2.5em;
+            color: #333;
+            margin-bottom: 10px;
+        }
 
-    header.intro p {
-        font-size: 1.2em;
-        color: #666;
-    }
+        header.intro p {
+            font-size: 1.2em;
+            color: #666;
+        }
 
-    .content-wrapper {
-        display: flex;
-        justify-content: space-between;
-        gap: 30px;
-        width: 100%;
-    }
+        .content-wrapper {
+            display: flex;
+            justify-content: space-between;
+            gap: 30px;
+            width: 100%;
+        }
 
-    .public-menu,
-    .login-box {
-        flex: 1;
-        padding: 40px;
-        background-color: #fff;
-        border-radius: 10px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    }
+        .public-menu,
+        .login-box {
+            flex: 1;
+            padding: 40px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
 
-    .public-menu h2,
-    .login-box h2 {
-        color: #333;
-        margin-bottom: 20px;
-        text-align: center;
-    }
+        .public-menu h2,
+        .login-box h2 {
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
 
-    .public-menu a {
-        display: block;
-        padding: 15px;
-        margin: 10px 0;
-        background-color: #28a745;
-        color: #fff;
-        text-decoration: none;
-        border-radius: 5px;
-        font-weight: bold;
-        transition: background-color 0.3s;
-        text-align: center;
-    }
+        .public-menu a {
+            display: block;
+            padding: 15px;
+            margin: 10px 0;
+            background-color: #28a745;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+            text-align: center;
+        }
 
-    .public-menu a:hover {
-        background-color: #218838;
-    }
+        .public-menu a:hover {
+            background-color: #218838;
+        }
 
-    .login-box input {
-        width: 100%;
-        padding: 12px;
-        margin: 10px 0;
-        border: 1px solid #ddd;
-        border-radius: 5px;
-        box-sizing: border-box;
-    }
+        .login-box input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
 
-    .login-box .button-group {
-        display: flex;
-        gap: 10px;
-        margin-top: 20px;
-    }
+        .login-box .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
 
-    .login-box button {
-        flex-grow: 1;
-        padding: 12px;
-        background-color: #007BFF;
-        color: #fff;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        font-size: 16px;
-        font-weight: bold;
-    }
+        .login-box button {
+            flex-grow: 1;
+            padding: 12px;
+            background-color: #007BFF;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
 
-    .login-box button:hover {
-        background-color: #0056b3;
-    }
+        .login-box button:hover {
+            background-color: #0056b3;
+        }
 
-    .login-box button.signup-button {
-        background-color: #6c757d;
-    }
+        .login-box button.signup-button {
+            background-color: #6c757d;
+        }
 
-    .login-box button.signup-button:hover {
-        background-color: #5a6268;
-    }
-</style>
+        .login-box button.signup-button:hover {
+            background-color: #5a6268;
+        }
+    </style>
 </head>
 <body>
     <div id="app" class="main-container">
@@ -157,48 +157,47 @@
 </body>
 </html>
 <script>
-const app = Vue.createApp({
-    data() {
-        return {
-            userName: '',
-            passWord: ''
-        };
-    },
-    methods: { 
-        fnGoToSignUp() {
-            window.location.href = '/Client/sign-up.html'; // 회원가입 페이지로 이동
+    const app = Vue.createApp({
+        data() {
+            return {
+                userName: '',
+                passWord: ''
+            };
         },
-        
-        fnLogin(){
-            let self = this;
-                let param = {
-                    username : self.userName,
-                    pwd : self.passWord
-                };
-                $.ajax({
-                    url: "http://localhost:3009/login",
-                    dataType: "json",
-                    type: "GET",
-                    data: param,
-                    success: function (data) {
-                        console.log(data);
-                        if(data == "") { // 로그인 실패
-                            alert("로그인 정보를 다시 확인해주세요.")
-                        } else { // 로그인 성공
-                            alert(data[0].NAME +"님 로그인 되었습니다.") 
-                            sessionStorage.setItem("sessionId", data[0].CLIENT_ID);
-                            sessionStorage.setItem("sessionStatus", data[0].STATUS);
-                            location.href="main.html"; // 메인페이지 예정
+        methods: { 
+            fnGoToSignUp() {
+                window.location.href = '/Client/sign-up.html'; 
+            },
+            // 로그인
+            fnLogin(){
+                let self = this;
+                    let param = {
+                        username : self.userName,
+                        pwd : self.passWord
+                    };
+                    $.ajax({
+                        url: "http://localhost:3009/login",
+                        dataType: "json",
+                        type: "GET",
+                        data: param,
+                        success: function (data) {
+                            console.log(data);
+                            if(data == "") { 
+                                alert("로그인 정보를 다시 확인해주세요.")
+                            } else { 
+                                alert(data[0].NAME +"님 로그인 되었습니다.") 
+                                sessionStorage.setItem("sessionId", data[0].CLIENT_ID);
+                                sessionStorage.setItem("sessionStatus", data[0].STATUS);
+                                location.href="main.html"; 
+                            }
                         }
-                    }
-                });
+                    });
+            }
+
+        },
+        mounted() {
+            console.log('Vue mounted');
         }
-
-    },
-    mounted() {
-        console.log('Vue mounted');
-    }
-});
-
-app.mount('#app');
+    });
+    app.mount('#app');
 </script>

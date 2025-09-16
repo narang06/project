@@ -188,13 +188,11 @@
     const app = Vue.createApp({
         data() {
             return {
-                // 변수 - (key : value)
                 clientId: '',
                 info: {}
             };
         },
         methods: {
-            // 회원정보 불러오기
             fnInfo: function () {
                 let self = this;
                 let param = {clientId : self.clientId};
@@ -207,7 +205,6 @@
                         if (data.info) {
                             self.info = data.info;
                             console.log(self.info);
-                            
                             // 전화번호 가져오기
                             if (self.info.PHONE_NUMBER) {
                                 const phoneParts = self.info.PHONE_NUMBER.split('-');

@@ -119,115 +119,114 @@
 </body>
 </html>
 <script>
-const app = Vue.createApp({
-    data() {
-        return {
-            address: '',
-            propertyType: '',
-            buildYear: '',
-            floor: '',
-            area: '',
-            price: '',
-            remarks: '',
-            sellers: [],
-            selectedSellerId: null
-        };
-    },
-    methods: {
-        goBack() {
-            window.location.href = "main.html?menu=properties";
-        },
-        // 매매 등록
-        fnAddProperty() {
-            let self = this;
-
-            // 연도 제한
-            if(self.buildYear > 2050 || self.buildYear < 1950){
-                alert("건축연도는 1950년 부터 2050년도 사이여야 합니다.");
-                return;
-            }
-
-            // 층수 제한
-            if (self.floor && (self.floor < -5 || self.floor > 100)) {
-                alert("층수는 -5(지하) ~ 100 사이여야 합니다.");
-                return;
-            }
-
-            // 면적 제한
-            if (self.area <= 0 || self.area > 10000) {
-                alert("면적은 1㎡ 이상 10,000㎡ 이하만 가능합니다.");
-                return;
-            }
-
-            // 가격 제한
-            if (self.price < 1000000 || self.price > 100000000000) { // 100만 ~ 1000억
-                alert("가격은 100만원 이상 1000억 이하만 가능합니다.");
-                return;
-            }
-
-            // 주소 입력 여부
-            if (!self.address || self.address.length < 5) {
-                alert("주소를 5자 이상 입력해주세요.");
-                return;
-            }
-
-            // 매물 유형 선택 여부
-            if (!self.propertyType) {
-                alert("매물 유형을 선택해주세요.");
-                return;
-            }
-
-            // 비고 글자 수 제한
-            if (self.remarks && self.remarks.length > 500) {
-                alert("비고는 500자 이내로 입력해주세요.");
-                return;
-            }
-
-
-            const param = {
-                address: self.address,
-                propertyType: self.propertyType,
-                buildYear: self.buildYear,
-                floor: self.floor,
-                area: self.area,
-                price: self.price,
-                sellerId: self.selectedSellerId,
-                remarks: self.remarks
+    const app = Vue.createApp({
+        data() {
+            return {
+                address: '',
+                propertyType: '',
+                buildYear: '',
+                floor: '',
+                area: '',
+                price: '',
+                remarks: '',
+                sellers: [],
+                selectedSellerId: null
             };
-
-            $.ajax({
-                url: "http://localhost:3009/properties/insert",
-                type: "GET",
-                dataType: "json",
-                data: param,
-                success: function(data) {
-                    alert("매물이 등록되었습니다!");
-                    location.href = "main.html?menu=properties";
-                },
-                error: function(err) {
-                    console.error(err);
-                    alert("등록 실패");
-                }
-            });
         },
-        // 부동산 매매자 찿기
-        fetchSellers() {
-            let self = this;
-            $.ajax({
-                url: "http://localhost:3009/clients",
-                type: "GET",
-                dataType: "json",
-                success: function(data) {
-                    self.sellers = data.list.filter(member => member.ROLE === 20);
-                }
-            });
-        }
-    },
-    mounted() {
-        let self = this;
-        self.fetchSellers();
-    }
-});
+        methods: {
+            goBack() {
+                window.location.href = "main.html?menu=properties";
+            },
+            // 매매 등록
+            fnAddProperty() {
+                let self = this;
 
-app.mount('#app');
+                // 연도 제한
+                if(self.buildYear > 2050 || self.buildYear < 1950){
+                    alert("건축연도는 1950년 부터 2050년도 사이여야 합니다.");
+                    return;
+                }
+
+                // 층수 제한
+                if (self.floor && (self.floor < -5 || self.floor > 100)) {
+                    alert("층수는 -5(지하) ~ 100 사이여야 합니다.");
+                    return;
+                }
+
+                // 면적 제한
+                if (self.area <= 0 || self.area > 10000) {
+                    alert("면적은 1㎡ 이상 10,000㎡ 이하만 가능합니다.");
+                    return;
+                }
+
+                // 가격 제한
+                if (self.price < 1000000 || self.price > 100000000000) { // 100만 ~ 1000억
+                    alert("가격은 100만원 이상 1000억 이하만 가능합니다.");
+                    return;
+                }
+
+                // 주소 입력 여부
+                if (!self.address || self.address.length < 5) {
+                    alert("주소를 5자 이상 입력해주세요.");
+                    return;
+                }
+
+                // 매물 유형 선택 여부
+                if (!self.propertyType) {
+                    alert("매물 유형을 선택해주세요.");
+                    return;
+                }
+
+                // 비고 글자 수 제한
+                if (self.remarks && self.remarks.length > 500) {
+                    alert("비고는 500자 이내로 입력해주세요.");
+                    return;
+                }
+
+                const param = {
+                    address: self.address,
+                    propertyType: self.propertyType,
+                    buildYear: self.buildYear,
+                    floor: self.floor,
+                    area: self.area,
+                    price: self.price,
+                    sellerId: self.selectedSellerId,
+                    remarks: self.remarks
+                };
+
+                $.ajax({
+                    url: "http://localhost:3009/properties/insert",
+                    type: "GET",
+                    dataType: "json",
+                    data: param,
+                    success: function(data) {
+                        alert("매물이 등록되었습니다!");
+                        location.href = "main.html?menu=properties";
+                    },
+                    error: function(err) {
+                        console.error(err);
+                        alert("등록 실패");
+                    }
+                });
+            },
+            // 부동산 매매자 찿기
+            fetchSellers() {
+                let self = this;
+                $.ajax({
+                    url: "http://localhost:3009/clients",
+                    type: "GET",
+                    dataType: "json",
+                    success: function(data) {
+                        self.sellers = data.list.filter(member => member.ROLE === 20);
+                    }
+                });
+            }
+        },
+        mounted() {
+            let self = this;
+            self.fetchSellers();
+        }
+    });
+
+    app.mount('#app');
 </script>

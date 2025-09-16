@@ -20,7 +20,6 @@
             width: 100%;
             height: 100%;
         }
-
         /* 사이드 메뉴 스타일 */
         .sidebar {
             width: 250px;
@@ -53,7 +52,6 @@
             background-color: #3498db;
             font-weight: bold;
         }
-
         /* 메인 콘텐츠 영역 스타일 */
         .main-content {
             flex-grow: 1;
@@ -62,7 +60,6 @@
             background-color: #f0f2f5;
             box-sizing: border-box;
         }
-
         /* 공통 콘텐츠 박스 스타일 */
         .content-box {
             background-color: white;
@@ -73,7 +70,6 @@
             box-sizing: border-box;
             margin-bottom: 20px;
         }
-
         /* 대시보드 카드 스타일 */
         .dashboard-grid {
             display: grid;
@@ -101,7 +97,6 @@
             font-weight: bold;
             color: #3498db;
         }
-        
         /* 테이블 스타일 */
         .full-width-table {
             width: 100%;
@@ -180,11 +175,9 @@
             border-radius: 5px;
             border: 1px solid #ccc;
         }
-
         .search-button {
             flex: 0 0 auto;
         }
-
         .reset-button {
             flex: 0 0 auto;
         }
@@ -434,318 +427,313 @@
     </div>
 </body>
 </html>
-   <script>
-        const app = Vue.createApp({
-            data() {
-                return {
-                    menus: [
-                        {id: 'members', name: '회원 관리', roles: [10]},
-                        {id: 'properties', name: '매물 관리', roles: [10, 20]},
-                        {id: 'propertySearch', name: '매물 검색', roles: [20, 30]},
-                        {id: 'contracts', name: '계약 관리', roles: [10, 20, 30]},
-                        {id: 'consultations', name: '고객 상담 게시판', roles: [10, 20, 30]},
-                        {id: 'tax', name: '세금 계산기', roles: [10, 20, 30]},
-                        {id: 'schedule', name: '일정 관리', roles: [10, 20, 30]},
-                        {id: 'stats', name: '통계/리포트', roles: [10]},
-                        {id: 'settings', name: '개인정보 설정', roles: [10, 20, 30]}
-                    ],
-                    currentMenu: '',
-                    user: null, 
-                    totalMembers: 0,
-                    totalProperties: 0,
-                    dailyconsultations: 0,
-                    dailyLogins: 0,
-                    members: [], // 전체 회원 목록
-                    properties: [], // 전체 매물 목록 
-                    contracts: [], // 전체 계약 목록
-                    roleMapping: { // 역활 부분 변환
-                        10: '관리자',
-                        20: '부동산 매매자',
-                        30: '일반 회원'
-                    },
-                    propertySearch: {
-                        address: '',
-                        type: '',
-                        price: ''
-                    },
-                    contractSearch: {
-                        address: '',
-                        brokerName: '',
-                        status: ''
-                    },
-                    filteredProperties: [], // 매물 검색 결과
-                    filteredContracts: [] // 계약 검색 결과
-                }
-            },
-            computed: {
-                filteredMenus() {
-                    let self = this;
-                    if (self.user && self.user.ROLE) {
-                        return self.menus.filter(menu => menu.roles.includes(self.user.ROLE));
-                    }
-                    return [];
+<script>
+     const app = Vue.createApp({
+        data() {
+            return {
+                menus: [
+                    {id: 'members', name: '회원 관리', roles: [10]},
+                    {id: 'properties', name: '매물 관리', roles: [10, 20]},
+                    {id: 'propertySearch', name: '매물 검색', roles: [20, 30]},
+                    {id: 'contracts', name: '계약 관리', roles: [10, 20, 30]},
+                    {id: 'consultations', name: '고객 상담 게시판', roles: [10, 20, 30]},
+                    {id: 'tax', name: '세금 계산기', roles: [10, 20, 30]},
+                    {id: 'schedule', name: '일정 관리', roles: [10, 20, 30]},
+                    {id: 'stats', name: '통계/리포트', roles: [10]},
+                    {id: 'settings', name: '개인정보 설정', roles: [10, 20, 30]}
+                ],
+                currentMenu: '',
+                user: null, 
+                totalMembers: 0,
+                totalProperties: 0,
+                dailyconsultations: 0,
+                dailyLogins: 0,
+                members: [], // 전체 회원 목록
+                properties: [], // 전체 매물 목록 
+                contracts: [], // 전체 계약 목록
+               roleMapping: { // 역활 부분 변환
+                    10: '관리자',
+                    20: '부동산 매매자',
+                    30: '일반 회원'
                 },
-                currentMenuName() {
-                    let self = this;
-                    const menu = self.menus.find(m => m.id === self.currentMenu);
-                    if (!menu) {
-                        return "대시보드";
-                    }
-                    return menu.name;
+                propertySearch: {
+                    address: '',
+                    type: '',
+                    price: ''
                 },
-                menuTitle() {
-                    let self = this;
-                    if (self.user && self.user.ROLE === 10) {       
-                        return '관리자 메뉴';
-                    }
-                    return '메인 메뉴';
-                }
-            },
-            watch: {
-                currentMenu(newVal, oldVal) {
-                    let self = this;
-                    if (newVal === 'members') {
-                        self.fnList();
-                    } else if (newVal === 'properties') {
-                        self.fnPropertyList();
-                    }
-                }
-            },
-            methods: {
-                
-                // 가격 함수
-                formatPrice(value) {
-                    if (!value) return '';
-                    // 억 단위
-                    const eok = Math.floor(value / 100000000); 
-                    const rest = value % 100000000;
-
-                    // 만 단위
-                    const man = Math.floor(rest / 10000); 
-
-                    let result = '';
-                    if (eok > 0) result += eok + '억';
-                    if (man > 0) result += ' ' + man + '만원';
-
-                    return result.trim();
+                contractSearch: {
+                    address: '',
+                    brokerName: '',
+                    status: ''
                 },
-
-                selectMenu(menuId) {
-                    let self = this;
-                    self.currentMenu = menuId;
-                },
-                // 로그인한 회원정보를 가져오는 함수
-                fnLoginInfo: function() { 
-                    let self = this;
-                    const sessionId = sessionStorage.getItem("sessionId");
-                    
-                    if (!sessionId) {
-                        window.location.href = "/Client/index.html"; 
-                        return;
-                    }
-
-                    $.ajax({
-                        url: "http://localhost:3009/user-info",
-                        dataType: "json",
-                        type: "GET",
-                        data: { sessionId: sessionId },
-                        success: function(data) {
-                            if (data && data.length > 0) {
-                                self.user = data[0];
-                                
-                                const params = new URLSearchParams(window.location.search);
-                                const menuParam = params.get('menu');
-
-                                if(menuParam) {
-                                    self.currentMenu = menuParam;
-                                } else if (self.filteredMenus.length > 0) {
-                                    self.currentMenu = self.filteredMenus[0].id;
-                                }
-                            } else {
-                                window.location.href = "/Client/index.html"; 
-                            }
-                        },
-                    });
-                },
-                // 회원 목록을 서버에서 가져오는 함수
-                fnList: function () {
-                    let self = this;
-                    $.ajax({
-                        url: "http://localhost:3009/clients",
-                        dataType: "json",
-                        type: "GET",
-                        data:{},
-                        success: function (data) {
-                            // 전체 회원 목록을 members에 저장
-                            self.members = data.list;
-                            // 총 회원 수 업데이트
-                            self.totalMembers = data.list.length;
-                        }
-                    });
-                },
-                // 회원 정보 삭제 함수
-                fnRemove : function(clientId){
-                    let self = this;
-                    if(!confirm("정말 삭제하시겠습니까?")){
-                        return;
-                    }
-                    $.ajax({
-                        url: "http://localhost:3009/clients/delete",
-                        dataType: "json",
-                        type: "GET",
-                        data: {clientId : clientId},
-                        success: function (data) {
-                            alert("삭제되었습니다.");
-                            self.fnList();
-                        }
-                    });
-                },
-                // 회원정보 수정
-                fnEdit: function(clientId){
-                    location.href="client-edit.html?clientId=" + clientId;
-                },
-                // 회원상세 보기
-                fnViewMember(clientId) {
-                    window.location.href = `client-detail.html?clientId=${clientId}`;
-                },
-                // 로그아웃
-                fnLogout: function(){
-                    sessionStorage.removeItem("sessionId");
-                    alert('로그아웃 되었습니다.');
-                    window.location.href = "/Client/index.html"; 
-                },
-                // 회원추가
-                fnAdd: function(){
-                    window.location.href = "sign-up.html?mode=admin";
-                },
-                // 매물 목록 가져오기
-                fnPropertyList: function () {
-                    let self = this;
-                    $.ajax({
-                        url: "http://localhost:3009/properties",
-                        dataType: "json",
-                        type: "GET",
-                        success: function (data) {
-                            self.properties = data.list;
-                            self.totalProperties = data.list.length;
-                            self.filteredProperties = self.properties.slice();
-                        }
-                    });
-                },
-                // 매물 삭제
-                fnRemoveProperty: function(propertyId) {
-                    let self = this;
-                    if(!confirm("정말 삭제하시겠습니까?")) return;
-                    $.ajax({
-                        url: "http://localhost:3009/properties/delete",
-                        dataType: "json",
-                        type: "GET",
-                        data: {propertyId : propertyId},
-                        success: function (data) {
-                            alert("삭제되었습니다.");
-                            self.fnPropertyList();
-                        }
-                    });
-                },
-                // 매물 추가
-                fnAddProperty: function(){
-                    location.href="property-add.html"; // 별도 페이지에서 추가
-                },
-                // 매물 수정
-                fnEditProperty: function(propertyId){
-                    location.href="property-edit.html?propertyId=" + propertyId;
-                },
-                // 매물 상세 보기
-                fnViewProperty: function(propertyId) {
-                    window.location.href = `property-detail.html?propertyId=${propertyId}`;
-                },
-                // 매물 검색
-                fnSearchProperties() {
-                    let self = this;
-                    const addr = self.propertySearch.address.trim().toLowerCase();
-                    const type = self.propertySearch.type;
-                    const priceRange = self.propertySearch.price;
-
-                    const url = new URL(window.location.href);
-                    url.searchParams.set('menu', self.currentMenu);
-                    if (addr) url.searchParams.set('address', addr); else url.searchParams.delete('address');
-                    if (type) url.searchParams.set('type', type); else url.searchParams.delete('type');
-                    if (priceRange) url.searchParams.set('price', priceRange); else url.searchParams.delete('price');
-
-                    window.history.pushState({}, '', url.toString());
-
-                    let minPrice = 0;
-                    let maxPrice = Infinity;
-                    if (priceRange) {
-                        const parts = priceRange.split('-');
-                        minPrice = Number(parts[0]);
-                        maxPrice = Number(parts[1]);
-                    }
-                    self.filteredProperties = self.properties.filter(prop => {
-                        const matchAddress = addr ? prop.ADDRESS.toLowerCase().includes(addr) : true;
-                        const matchType = type ? prop.PROPERTY_TYPE === type : true;
-                        const matchPrice = prop.PRICE >= minPrice && prop.PRICE < maxPrice;
-                        return matchAddress && matchType && matchPrice;
-                    });
-                },
-
-                // 매물 검색 초기화
-                fnResetSearch() {
-                    let self = this;
-                    self.propertySearch.address = '';
-                    self.propertySearch.type = '';
-                    self.propertySearch.price = '';
-                    self.filteredProperties = self.properties.slice();
-                },
-                // 계약 검색
-                fnSearchContracts: function() {
-                    let self = this;
-                    const searchAddr = self.contractSearch.address.toLowerCase();
-                    const searchBroker = self.contractSearch.brokerName.toLowerCase();
-                    const searchStatus = self.contractSearch.status;
-
-                    const currentList = self.user.ROLE === 10 ? self.contracts : self.filteredContracts;
-                    
-                    self.filteredContracts = currentList.filter(contract => {
-                        const matchAddr = !searchAddr || (contract.PROPERTY_ADDRESS && contract.PROPERTY_ADDRESS.toLowerCase().includes(searchAddr));
-                        const matchBroker = !searchBroker || (contract.BROKER_NAME && contract.BROKER_NAME.toLowerCase().includes(searchBroker));
-                        const matchStatus = !searchStatus || contract.STATUS === searchStatus;
-                        
-                        return matchAddr && matchBroker && matchStatus;
-                    });
-                },
-
-                // 계약 검색 초기화
-                fnResetContractSearch: function() {
-                    let self = this;
-                    self.contractSearch.address = '';
-                    self.contractSearch.brokerName = '';
-                    self.contractSearch.status = '';
-                    self.fnApplyContractFilter(); // 다시 역할 기반으로 필터링
-                }
-            }, // 끝
-            mounted() { // 시작하자마자 실행
+                filteredProperties: [], // 매물 검색 결과
+                filteredContracts: [] // 계약 검색 결과
+            }
+        },
+        computed: {
+            filteredMenus() {
                 let self = this;
-                self.fnLoginInfo();
-                self.fnList();
-                self.fnPropertyList();
-           
-                const params = new URLSearchParams(window.location.search);
-                const addressParam = params.get('address');
-                const typeParam = params.get('type');
-                const priceParam = params.get('price');
-
-                if (addressParam || typeParam || priceParam) {
-                    self.search.address = addressParam || '';
-                    self.search.type = typeParam || '';
-                    self.search.price = priceParam || '';
-                    
-                    setTimeout(() => {
-                        self.fnSearchProperties();
-                    }, 500);
+                if (self.user && self.user.ROLE) {
+                    return self.menus.filter(menu => menu.roles.includes(self.user.ROLE));
+                }
+                return [];
+            },
+            currentMenuName() {
+                let self = this;
+                const menu = self.menus.find(m => m.id === self.currentMenu);
+                if (!menu) {
+                    return "대시보드";
+                }
+                return menu.name;
+            },
+            menuTitle() {
+                let self = this;
+                if (self.user && self.user.ROLE === 10) {       
+                    return '관리자 메뉴';
+                }
+                return '메인 메뉴';
+            }
+        },
+        watch: {
+            currentMenu(newVal, oldVal) {
+                let self = this;
+                if (newVal === 'members') {
+                    self.fnList();
+                } else if (newVal === 'properties') {
+                    self.fnPropertyList();
                 }
             }
-        });
+        },
+        methods: {     
+            // 가격 함수
+            formatPrice(value) {
+                if (!value) return '';
+                // 억 단위
+                const eok = Math.floor(value / 100000000); 
+                const rest = value % 100000000;
+                // 만 단위
+                const man = Math.floor(rest / 10000); 
 
+                let result = '';
+                if (eok > 0) result += eok + '억';
+                if (man > 0) result += ' ' + man + '만원';
+
+                return result.trim();
+            },
+
+            selectMenu(menuId) {
+                let self = this;
+                self.currentMenu = menuId;
+            },
+            // 로그인한 회원정보를 가져오는 함수
+            fnLoginInfo: function() { 
+                let self = this;
+                const sessionId = sessionStorage.getItem("sessionId");
+                    
+                if (!sessionId) {
+                    window.location.href = "/Client/index.html"; 
+                    return;
+                }
+
+                $.ajax({
+                    url: "http://localhost:3009/user-info",
+                    dataType: "json",
+                    type: "GET",
+                    data: { sessionId: sessionId },
+                    success: function(data) {
+                        if (data && data.length > 0) {
+                            self.user = data[0];
+                            
+                            const params = new URLSearchParams(window.location.search);
+                            const menuParam = params.get('menu');
+
+                            if(menuParam) {
+                                self.currentMenu = menuParam;
+                            } else if (self.filteredMenus.length > 0) {
+                                self.currentMenu = self.filteredMenus[0].id;
+                            }
+                        } else {
+                            window.location.href = "/Client/index.html"; 
+                        }
+                    },
+                });
+            },
+            // 회원 목록을 서버에서 가져오는 함수
+            fnList: function () {
+                let self = this;
+                $.ajax({
+                    url: "http://localhost:3009/clients",
+                    dataType: "json",
+                    type: "GET",
+                    data:{},
+                    success: function (data) {
+                        // 전체 회원 목록을 members에 저장
+                        self.members = data.list;
+                        // 총 회원 수 업데이트
+                        self.totalMembers = data.list.length;
+                    }
+                });
+            },
+            // 회원 정보 삭제 함수
+            fnRemove : function(clientId){
+                let self = this;
+                if(!confirm("정말 삭제하시겠습니까?")){
+                    return;
+                }
+                $.ajax({
+                    url: "http://localhost:3009/clients/delete",
+                    dataType: "json",
+                    type: "GET",
+                    data: {clientId : clientId},
+                    success: function (data) {
+                        alert("삭제되었습니다.");
+                        self.fnList();
+                    }
+                });
+            },
+            // 회원정보 수정
+            fnEdit: function(clientId){
+                location.href="client-edit.html?clientId=" + clientId;
+            },
+            // 회원상세 보기
+            fnViewMember(clientId) {
+                window.location.href = `client-detail.html?clientId=${clientId}`;
+            },
+            // 로그아웃
+            fnLogout: function(){
+                sessionStorage.removeItem("sessionId");
+                alert('로그아웃 되었습니다.');
+                window.location.href = "/Client/index.html"; 
+            },
+            // 회원추가
+            fnAdd: function(){
+                window.location.href = "sign-up.html?mode=admin";
+            },
+            // 매물 목록 가져오기
+            fnPropertyList: function () {
+                let self = this;
+                $.ajax({
+                    url: "http://localhost:3009/properties",
+                    dataType: "json",
+                    type: "GET",
+                    success: function (data) {
+                        self.properties = data.list;
+                        self.totalProperties = data.list.length;
+                        self.filteredProperties = self.properties.slice();
+                    }
+                });
+            },
+            // 매물 삭제
+            fnRemoveProperty: function(propertyId) {
+                let self = this;
+                if(!confirm("정말 삭제하시겠습니까?")) return;
+                    $.ajax({
+                    url: "http://localhost:3009/properties/delete",
+                    dataType: "json",
+                    type: "GET",
+                    data: {propertyId : propertyId},
+                    success: function (data) {
+                        alert("삭제되었습니다.");
+                        self.fnPropertyList();
+                    }
+                });
+            },
+            // 매물 추가
+            fnAddProperty: function(){
+                location.href="property-add.html"; // 별도 페이지에서 추가
+            },
+            // 매물 수정
+            fnEditProperty: function(propertyId){
+                location.href="property-edit.html?propertyId=" + propertyId;
+            },
+            // 매물 상세 보기
+            fnViewProperty: function(propertyId) {
+                window.location.href = `property-detail.html?propertyId=${propertyId}`;
+            },
+            // 매물 검색
+            fnSearchProperties() {
+                let self = this;
+                const addr = self.propertySearch.address.trim().toLowerCase();
+                const type = self.propertySearch.type;
+                const priceRange = self.propertySearch.price;
+
+                const url = new URL(window.location.href);
+                url.searchParams.set('menu', self.currentMenu);
+                if (addr) url.searchParams.set('address', addr); else url.searchParams.delete('address');
+                if (type) url.searchParams.set('type', type); else url.searchParams.delete('type');
+                if (priceRange) url.searchParams.set('price', priceRange); else url.searchParams.delete('price');
+
+                window.history.pushState({}, '', url.toString());
+
+                let minPrice = 0;
+                let maxPrice = Infinity;
+                if (priceRange) {
+                    const parts = priceRange.split('-');
+                    minPrice = Number(parts[0]);
+                    maxPrice = Number(parts[1]);
+                }
+                self.filteredProperties = self.properties.filter(prop => {
+                    const matchAddress = addr ? prop.ADDRESS.toLowerCase().includes(addr) : true;
+                    const matchType = type ? prop.PROPERTY_TYPE === type : true;
+                    const matchPrice = prop.PRICE >= minPrice && prop.PRICE < maxPrice;
+                    return matchAddress && matchType && matchPrice;
+                });
+            },
+            // 매물 검색 초기화
+            fnResetSearch() {
+                let self = this;
+                self.propertySearch.address = '';
+                self.propertySearch.type = '';
+                self.propertySearch.price = '';
+                self.filteredProperties = self.properties.slice();
+            },
+            // 계약 검색
+            fnSearchContracts: function() {
+                let self = this;
+                const searchAddr = self.contractSearch.address.toLowerCase();
+                const searchBroker = self.contractSearch.brokerName.toLowerCase();
+                const searchStatus = self.contractSearch.status;
+
+                const currentList = self.user.ROLE === 10 ? self.contracts : self.filteredContracts;
+                
+                self.filteredContracts = currentList.filter(contract => {
+                    const matchAddr = !searchAddr || (contract.PROPERTY_ADDRESS && contract.PROPERTY_ADDRESS.toLowerCase().includes(searchAddr));
+                    const matchBroker = !searchBroker || (contract.BROKER_NAME && contract.BROKER_NAME.toLowerCase().includes(searchBroker));
+                    const matchStatus = !searchStatus || contract.STATUS === searchStatus;
+                        
+                    return matchAddr && matchBroker && matchStatus;
+                });
+            },
+            // 계약 검색 초기화
+            fnResetContractSearch: function() {
+                let self = this;
+                self.contractSearch.address = '';
+                self.contractSearch.brokerName = '';
+                self.contractSearch.status = '';
+                self.fnApplyContractFilter(); // 다시 역할 기반으로 필터링
+            }
+        }, // 끝
+        mounted() { // 시작하자마자 실행
+            let self = this;
+            self.fnLoginInfo();
+            self.fnList();
+            self.fnPropertyList();
+           
+            const params = new URLSearchParams(window.location.search);
+            const addressParam = params.get('address');
+            const typeParam = params.get('type');
+            const priceParam = params.get('price');
+
+            if (addressParam || typeParam || priceParam) {
+                self.search.address = addressParam || '';
+                self.search.type = typeParam || '';
+                self.search.price = priceParam || '';
+                    
+                setTimeout(() => {
+                    self.fnSearchProperties();
+                }, 500);
+            }
+        }
+    });
     app.mount('#app');
 </script>

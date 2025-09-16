@@ -61,74 +61,72 @@
 </body>
 </html>
 <script>
-const app = Vue.createApp({
-    data() {
-        return {
-            prop: {},
-        };
-    },
-    methods: {
-        goBack() {
-            window.history.back();
+    const app = Vue.createApp({
+        data() {
+            return {
+                prop: {},
+            };
         },
-        formattedValue(value) {
-            return value ? value : "미정";
-        },
-        formattedDate(value) {
-            if (!value) return "미정";
+        methods: {
+            goBack() {
+                window.history.back();
+            },
+            formattedValue(value) {
+                return value ? value : "미정";
+            },
+            formattedDate(value) {
+                if (!value) return "미정";
 
-            // 날짜 형식이면 yyyy-mm-dd만 추출
-            if (!isNaN(Date.parse(value))) {
-                const date = new Date(value);
-                const yyyy = date.getFullYear();
-                const mm = String(date.getMonth() + 1).padStart(2, '0');
-                const dd = String(date.getDate()).padStart(2, '0');
-                return `${yyyy}-${mm}-${dd}`;
-            }
-
-            return value;
-        },
-
-        formatPrice(value) {
-          if (!value) return '';
-          const eok = Math.floor(value / 100000000); 
-          const rest = value % 100000000;
-          const man = Math.floor(rest / 10000); 
-          let result = '';
-          if (eok > 0) result += eok + '억';
-          if (man > 0) result += ' ' + man + '만원';
-          return result.trim();
-        },
-        // 회원 정보 조회
-        fetchpropertieInfo() {
-            let self = this;
-            const params = new URLSearchParams(window.location.search);
-            const propertyId = params.get('propertyId');
-            if (!propertyId) return;
-
-            $.ajax({
-                url: "http://localhost:3009/properties/info",
-                data: { propertyId: propertyId },
-                type: "GET",
-                dataType: "json",
-                success: (data) => {
-                    if (data.info) {
-                        self.prop = data.info;
-                    } else {
-                        alert("매물 정보를 가져오지 못했습니다.");
-                    }
-                },
-                error: (err) => {
-                    console.error(err);
+                // 날짜 형식이면 yyyy-mm-dd만 추출
+                if (!isNaN(Date.parse(value))) {
+                    const date = new Date(value);
+                    const yyyy = date.getFullYear();
+                    const mm = String(date.getMonth() + 1).padStart(2, '0');
+                    const dd = String(date.getDate()).padStart(2, '0');
+                    return `${yyyy}-${mm}-${dd}`;
                 }
-            });
-        }
-    },
-    mounted() {
-        let self = this;
-        self.fetchpropertieInfo();
-    }
-});
+                return value;
+            },
 
-app.mount('#app');
+            formatPrice(value) {
+            if (!value) return '';
+            const eok = Math.floor(value / 100000000); 
+            const rest = value % 100000000;
+            const man = Math.floor(rest / 10000); 
+            let result = '';
+            if (eok > 0) result += eok + '억';
+            if (man > 0) result += ' ' + man + '만원';
+            return result.trim();
+            },
+            // 회원 정보 조회
+            fetchpropertieInfo() {
+                let self = this;
+                const params = new URLSearchParams(window.location.search);
+                const propertyId = params.get('propertyId');
+                if (!propertyId) return;
+
+                $.ajax({
+                    url: "http://localhost:3009/properties/info",
+                    data: { propertyId: propertyId },
+                    type: "GET",
+                    dataType: "json",
+                    success: (data) => {
+                        if (data.info) {
+                            self.prop = data.info;
+                        } else {
+                            alert("매물 정보를 가져오지 못했습니다.");
+                        }
+                    },
+                    error: (err) => {
+                        console.error(err);
+                    }
+                });
+            }
+        },
+        mounted() {
+            let self = this;
+            self.fetchpropertieInfo();
+        }
+    });
+    app.mount('#app');
 </script>

@@ -157,104 +157,97 @@
       </tbody>
     </table>
   </div>
-  
-  <script>
-    const app = Vue.createApp({
-      data() {
-        return {
-          properties: [],
-          filteredProperties: [],
-          search: {
-            address: '',
-            type: '',
-            price: ''
-          }
-        };
-      },
-      methods: {
-        // 숫자 함수
-        formatPrice(value) {
-          if (!value) return '';
-          const eok = Math.floor(value / 100000000); 
-          const rest = value % 100000000;
-          const man = Math.floor(rest / 10000); 
-          let result = '';
-          if (eok > 0) result += eok + '억';
-          if (man > 0) result += ' ' + man + '만원';
-          return result.trim();
-        },
-        // 뒤로가기
-        goBack() {
-          window.location.href = "index.html";
-        },
-        // 매물 불러오기
-        fnPropertyList() {
-          let self = this;
-          $.ajax({
-            url: "http://localhost:3009/properties",
-            dataType: "json",
-            type: "GET",
-            success: function (data) {
-              self.properties = data.list;
-
-              // 뒤로가기 시 검색 상태 복원
-              const savedSearch = JSON.parse(sessionStorage.getItem('propertySearch') || '{}');
-              if (savedSearch && Object.keys(savedSearch).length) {
-                self.search = savedSearch;
-                self.fnSearchProperties();
-              } else {
-                self.filteredProperties = self.properties.slice();
-              }
-            }
-          });
-        },
-        fnViewProperty(propertyId) {
-          // 현재 페이지 URL 저장
-          sessionStorage.setItem('prevPage', location.href);
-          sessionStorage.setItem('propertySearch', JSON.stringify(this.search));
-          window.location.href = `property-detail.html?propertyId=${propertyId}`;
-        },
-
-        // 검색
-        fnSearchProperties() {
-          let self = this;
-          const addr = self.search.address.trim().toLowerCase();
-          const type = self.search.type;
-          const priceRange = self.search.price;
-
-          let minPrice = 0;
-          let maxPrice = Infinity;
-
-          if (priceRange) {
-            const parts = priceRange.split('-');
-            minPrice = Number(parts[0]);
-            maxPrice = Number(parts[1]);
-          }
-
-          self.filteredProperties = self.properties.filter(prop => {
-            const matchAddress = addr ? prop.ADDRESS.toLowerCase().includes(addr) : true;
-            const matchType = type ? prop.PROPERTY_TYPE === type : true;
-            const matchPrice = prop.PRICE >= minPrice && prop.PRICE < maxPrice;
-            return matchAddress && matchType && matchPrice;
-          });
-        },
-
-        // 검색 초기화
-        fnResetSearch() {
-          this.search = { address:'', type:'', price:'' };
-          this.filteredProperties = this.properties.slice();
-        }
-      },
-      mounted() {
-        this.fnPropertyList();
-      }
-    });
-
-    app.mount('#app');
-  </script>
 </body>
 </html>
+<script>
+  const app = Vue.createApp({
+    data() {
+      return {
+        properties: [],
+        filteredProperties: [],
+        search: {
+          address: '',
+          type: '',
+          price: ''
+        }
+      };
+    },
+    methods: {
+      // 숫자 함수
+      formatPrice(value) {
+        if (!value) return '';
+        const eok = Math.floor(value / 100000000); 
+        const rest = value % 100000000;
+        const man = Math.floor(rest / 10000); 
+        let result = '';
+        if (eok > 0) result += eok + '억';
+        if (man > 0) result += ' ' + man + '만원';
+        return result.trim();
+      },
+      // 뒤로가기
+      goBack() {
+        window.location.href = "index.html";
+      },
+      // 매물 불러오기
+      fnPropertyList() {
+        let self = this;
+        $.ajax({
+          url: "http://localhost:3009/properties",
+          dataType: "json",
+          type: "GET",
+          success: function (data) {
+            self.properties = data.list;
+            // 뒤로가기 시 검색 상태 복원
+            const savedSearch = JSON.parse(sessionStorage.getItem('propertySearch') || '{}');
+            if (savedSearch && Object.keys(savedSearch).length) {
+              self.search = savedSearch;
+              self.fnSearchProperties();
+            } else {
+              self.filteredProperties = self.properties.slice();
+            }
+          }
+        });
+      },
+      fnViewProperty(propertyId) {
+        // 현재 페이지 URL 저장
+        sessionStorage.setItem('prevPage', location.href);
+        sessionStorage.setItem('propertySearch', JSON.stringify(this.search));
+        window.location.href = `property-detail.html?propertyId=${propertyId}`;
+      },
+      // 검색
+      fnSearchProperties() {
+        let self = this;
+        const addr = self.search.address.trim().toLowerCase();
+        const type = self.search.type;
+        const priceRange = self.search.price;
 
+        let minPrice = 0;
+        let maxPrice = Infinity;
 
+        if (priceRange) {
+          const parts = priceRange.split('-');
+          minPrice = Number(parts[0]);
+          maxPrice = Number(parts[1]);
+        }
 
-
+        self.filteredProperties = self.properties.filter(prop => {
+          const matchAddress = addr ? prop.ADDRESS.toLowerCase().includes(addr) : true;
+          const matchType = type ? prop.PROPERTY_TYPE === type : true;
+          const matchPrice = prop.PRICE >= minPrice && prop.PRICE < maxPrice;
+          return matchAddress && matchType && matchPrice;
+        });
+      },
+      // 검색 초기화
+      fnResetSearch() {
+        let self = this;
+        self.search = { address:'', type:'', price:'' };
+        self.filteredProperties = self.properties.slice();
+      }
+    },
+    mounted() {
+      let self = this;
+      self.fnPropertyList();
+    }
+  });
+  app.mount('#app');
+</script>

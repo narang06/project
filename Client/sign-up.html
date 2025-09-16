@@ -7,126 +7,126 @@
 <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 <script src="https://code.jquery.com/jquery-3.7.1.js" crossorigin="anonymous"></script>
 <style>
-body {
-    font-family: Arial, sans-serif;
-    background-color: #f0f2f5;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    margin: 0;
-}
-.container {
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f0f2f5;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+    }
+    .container {
+        background-color: #fff;
+        padding: 40px;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 500px;
+        box-sizing: border-box;
+    }
+    h2 {
+        color: #333;
+        text-align: center;
+        margin-bottom: 25px;
+    }
+    .form-section {
+        margin-bottom: 25px;
+        padding: 15px;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+    }
+    .form-section.optional {
+        border-style: dashed;
+        background-color: #fafafa;
+    }
+    .form-section h3 {
+        margin-top: 0;
+        color: #555;
+        font-size: 1.1em;
+    }
+    .form-group {
+        margin-bottom: 15px;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        color: #555;
+        font-weight: bold;
+    }
+    .form-group input, .form-group select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        box-sizing: border-box;
+    }
+    .gender-inline {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+    }
+    .gender-inline label {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin: 0;
+        font-weight: normal;
+    }
+    .gender-inline input[type="radio"] {
+        margin: 0;
+        width: auto;
+    }
+    .role-inline {
+        display: flex;
+        gap: 10px;         
+        align-items: center;
+        flex-wrap: nowrap;   
+    }
+    .role-inline label {
+        white-space: nowrap; 
+        font-weight: normal;
+    }
+    .role-inline input[type="radio"] {
+        margin: 0;
+        width: auto;
+    }
+    .button-inline {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+    .register-button, .check-button {
+        padding: 12px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+    .register-button {
+        background-color: #28a745;
+        color: #fff;
+        width: 100%;
+        margin-top: 20px;
+    }
+    .check-button {
+        background-color: #007bff;
+        color: #fff;
+    }
+    .cancel-button {
     background-color: #fff;
-    padding: 40px;
-    border-radius: 10px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    width: 100%;
-    max-width: 500px;
-    box-sizing: border-box;
-}
-h2 {
-    color: #333;
-    text-align: center;
-    margin-bottom: 25px;
-}
-.form-section {
-    margin-bottom: 25px;
-    padding: 15px;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-}
-.form-section.optional {
-    border-style: dashed;
-    background-color: #fafafa;
-}
-.form-section h3 {
-    margin-top: 0;
-    color: #555;
-    font-size: 1.1em;
-}
-.form-group {
-    margin-bottom: 15px;
-}
-.form-group label {
-    display: block;
-    margin-bottom: 5px;
-    color: #555;
-    font-weight: bold;
-}
-.form-group input, .form-group select {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    box-sizing: border-box;
-}
-.gender-inline {
-    display: flex;
-    gap: 20px;
-    align-items: center;
-}
-.gender-inline label {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    margin: 0;
-    font-weight: normal;
-}
-.gender-inline input[type="radio"] {
-    margin: 0;
-    width: auto;
-}
-.role-inline {
-    display: flex;
-    gap: 10px;         
-    align-items: center;
-    flex-wrap: nowrap;   
-}
-.role-inline label {
-    white-space: nowrap; 
-    font-weight: normal;
-}
-.role-inline input[type="radio"] {
-    margin: 0;
-    width: auto;
-}
-.button-inline {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-}
-.register-button, .check-button {
+    color: #555;             
+    border: 1px solid #ccc;  
     padding: 12px;
-    border: none;
     border-radius: 5px;
     cursor: pointer;
-    font-weight: bold;
-}
-.register-button {
-    background-color: #28a745;
-    color: #fff;
     width: 100%;
-    margin-top: 20px;
-}
-.check-button {
-    background-color: #007bff;
-    color: #fff;
-}
-.cancel-button {
-  background-color: #fff;
-  color: #555;             
-  border: 1px solid #ccc;  
-  padding: 12px;
-  border-radius: 5px;
-  cursor: pointer;
-  width: 100%;
-  margin-top: 10px;
-}
+    margin-top: 10px;
+    }
 
-.cancel-button:hover {
-  background-color: #f2f2f2; 
-}
+    .cancel-button:hover {
+    background-color: #f2f2f2; 
+    }
 </style>
 </head>
 <body>
@@ -227,136 +227,137 @@ h2 {
 </body>
 </html>
 <script>
-const app = Vue.createApp({
-    data() {
-        return {
-            userName: '',
-            password: '',
-            confirmPassword: '',
-            name: '',
-            phonePrefix: '010',
-            phoneMiddle: '',
-            phoneLast: '',
-            email: '',
-            currentAddress: '',
-            birthDate: '',
-            gender: '',
-            role: '', 
-            preferredLocation: '',
-            budget: '',
-            nickName : '',
-            isUsernameChecked: false,
-            isAdminMode: false
-        };
-    },
-    methods: {
-        goBack() {
-            window.location.href = "main.html?menu=members";
-        },           
-        checkUserName() {
-            let self = this;
-            if(!self.userName) {
-                alert('아이디를 입력해주세요.');
-                return;
-            }
-            $.ajax({
-                url: "http://localhost:3009/clients/check-username",
-                type: "GET",
-                dataType: "json",
-                data: { username: self.userName },
-                success: (data) => {
-                    if(data.exists) {
-                        alert('이미 사용 중인 아이디입니다.');
-                        self.isUsernameChecked = false;
-                    } else {
-                        alert('사용 가능한 아이디입니다.');
-                        self.isUsernameChecked = true;
-                    }
-                },
-                error: (err) => {
-                    console.error(err);
-                    alert('서버 오류 발생');
-                    self.isUsernameChecked = false;
-                }
-            });
-        },
-
-        validate() {
-            let self = this;
-            if(!self.isUsernameChecked) {
-                alert('아이디 중복 확인을 먼저 해주세요!');
-                return false;
-            }
-
-            const namePattern = /^[가-힣a-zA-Z]+$/;
-            if(!namePattern.test(self.name)) { alert('이름은 한글 또는 영어만 가능합니다.'); return false; }
-
-            const numberPattern = /^[0-9]+$/;
-            if(!numberPattern.test(self.phoneMiddle) || !numberPattern.test(self.phoneLast)) {
-                alert('연락처는 숫자만 입력해주세요.');
-                return false;
-            }
-
-            const specialPattern = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/;
-            if(!specialPattern.test(self.password)) { alert('비밀번호에는 특수문자가 필요합니다.'); return false; }
-
-            if(self.password !== self.confirmPassword) { alert('비밀번호가 일치하지 않습니다.'); return false; }
-
-            if(!self.userName || !self.password || !self.name || !self.phonePrefix || !self.phoneMiddle || !self.phoneLast || !self.email || !self.currentAddress || !self.birthDate || !self.gender) {
-                alert('필수 항목을 모두 입력해주세요.');
-                return false;
-            }
-
-            return true;
-        },
-
-        fnSignUp() {
-            let self = this;
-            if(!self.validate()) return;
-
-            const fullPhoneNumber = `${self.phonePrefix}-${self.phoneMiddle}-${self.phoneLast}`;
-            const param = {
-                username: self.userName,
-                password: self.password,
-                name: self.name,
-                nickname: self.nickName,
-                phone: fullPhoneNumber,
-                email: self.email,
-                currentAddress: self.currentAddress,
-                birthDate: self.birthDate,
-                gender: self.gender,
-                role: self.role,
-                preferredLocation: self.preferredLocation || null,
-                budget: self.budget || null
+    const app = Vue.createApp({
+        data() {
+            return {
+                userName: '',
+                password: '',
+                confirmPassword: '',
+                name: '',
+                phonePrefix: '010',
+                phoneMiddle: '',
+                phoneLast: '',
+                email: '',
+                currentAddress: '',
+                birthDate: '',
+                gender: '',
+                role: '', 
+                preferredLocation: '',
+                budget: '',
+                nickName : '',
+                isUsernameChecked: false,
+                isAdminMode: false
             };
-
-            $.ajax({
-                url: "http://localhost:3009/clients/insert",
-                type: "GET",
-                dataType: "json",
-                data: param,
-                success: (data) => {
-                    alert(this.isAdminMode ? '회원 추가 완료!' : '회원가입 완료!');
-                    if(this.isAdminMode){
-                        window.location.href = "main.html"; // 관리자 모드면 메인으로
-                    } else {
-                        window.location.href = "index.html"; // 일반 회원 가입
-                    }
-                },
-                error: (err) => {
-                    console.error(err);
-                    alert('서버 오류 발생');
+        },
+        methods: {
+            goBack() {
+                window.location.href = "main.html?menu=members";
+            },           
+            checkUserName() {
+                let self = this;
+                if(!self.userName) {
+                    alert('아이디를 입력해주세요.');
+                    return;
                 }
-            });
+                $.ajax({
+                    url: "http://localhost:3009/clients/check-username",
+                    type: "GET",
+                    dataType: "json",
+                    data: { username: self.userName },
+                    success: (data) => {
+                        if(data.exists) {
+                            alert('이미 사용 중인 아이디입니다.');
+                            self.isUsernameChecked = false;
+                        } else {
+                            alert('사용 가능한 아이디입니다.');
+                            self.isUsernameChecked = true;
+                        }
+                    },
+                    error: (err) => {
+                        console.error(err);
+                        alert('서버 오류 발생');
+                        self.isUsernameChecked = false;
+                    }
+                });
+            },
+
+            validate() {
+                let self = this;
+                if(!self.isUsernameChecked) {
+                    alert('아이디 중복 확인을 먼저 해주세요!');
+                    return false;
+                }
+
+                const namePattern = /^[가-힣a-zA-Z]+$/;
+                if(!namePattern.test(self.name)) { alert('이름은 한글 또는 영어만 가능합니다.'); return false; }
+
+                const numberPattern = /^[0-9]+$/;
+                if(!numberPattern.test(self.phoneMiddle) || !numberPattern.test(self.phoneLast)) {
+                    alert('연락처는 숫자만 입력해주세요.');
+                    return false;
+                }
+
+                const specialPattern = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/;
+                if(!specialPattern.test(self.password)) { alert('비밀번호에는 특수문자가 필요합니다.'); return false; }
+
+                if(self.password !== self.confirmPassword) { alert('비밀번호가 일치하지 않습니다.'); return false; }
+
+                if(!self.userName || !self.password || !self.name || !self.phonePrefix || !self.phoneMiddle || !self.phoneLast || !self.email || !self.currentAddress || !self.birthDate || !self.gender) {
+                    alert('필수 항목을 모두 입력해주세요.');
+                    return false;
+                }
+
+                return true;
+            },
+
+            fnSignUp() {
+                let self = this;
+                if(!self.validate()) return;
+
+                const fullPhoneNumber = `${self.phonePrefix}-${self.phoneMiddle}-${self.phoneLast}`;
+                const param = {
+                    username: self.userName,
+                    password: self.password,
+                    name: self.name,
+                    nickname: self.nickName,
+                    phone: fullPhoneNumber,
+                    email: self.email,
+                    currentAddress: self.currentAddress,
+                    birthDate: self.birthDate,
+                    gender: self.gender,
+                    role: self.role,
+                    preferredLocation: self.preferredLocation || null,
+                    budget: self.budget || null
+                };
+
+                $.ajax({
+                    url: "http://localhost:3009/clients/insert",
+                    type: "GET",
+                    dataType: "json",
+                    data: param,
+                    success: (data) => {
+                        alert(self.isAdminMode ? '회원 추가 완료!' : '회원가입 완료!');
+                        if(self.isAdminMode){
+                            window.location.href = "main.html"; // 관리자 모드면 메인으로
+                        } else {
+                            window.location.href = "index.html"; // 일반 회원 가입
+                        }
+                    },
+                    error: (err) => {
+                        console.error(err);
+                        alert('서버 오류 발생');
+                    }
+                });
+            }
+        },
+        mounted() {
+            let self = this;
+            const params = new URLSearchParams(window.location.search);
+            if(params.get('mode') === 'admin'){
+                self.isAdminMode = true;
+            }
         }
-    },
-    mounted() {
-        const params = new URLSearchParams(window.location.search);
-        if(params.get('mode') === 'admin'){
-            this.isAdminMode = true;
-        }
-    }
-});
-app.mount('#app');
+    });
+    app.mount('#app');
 </script>
 
