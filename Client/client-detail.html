@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>회원 정보 상세보기</title>
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        background: #f0f2f5;
+    }
+    .detail-container {
+        max-width: 600px;
+        margin: 20px auto;
+        padding: 20px;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .detail-container h2 {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    .detail-row {
+        margin-bottom: 10px;
+        line-height: 1.5;
+    }
+    .detail-row label {
+        font-weight: bold;
+        margin-right: 5px;
+    }
+    .detail-container button {
+        margin-top: 20px;
+        padding: 10px 15px;
+        background-color: #3498db;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+</style>
+</head>
+<body>
+    <div id="app" class="detail-container">
+        <h2>회원 상세 정보</h2>
+        <div class="detail-row"><label>아이디:</label>{{ member.username }}</div>
+        <div class="detail-row"><label>이름:</label>{{ member.name }}</div>
+        <div class="detail-row"><label>닉네임:</label>{{ member.nickName }}</div>
+        <div class="detail-row"><label>생년월일:</label>{{ formattedValue(member.birth) }}</div>
+        <div class="detail-row"><label>전화번호:</label>{{ formattedValue(member.phoneNumber) }}</div>
+        <div class="detail-row"><label>현재 주소:</label>{{ formattedValue(member.cAddr) }}</div>
+        <div class="detail-row"><label>성별:</label>{{ formattedGender(member.gender) }}</div>
+        <div class="detail-row"><label>이메일:</label>{{ formattedValue(member.email) }}</div>
+        <div class="detail-row"><label>분류:</label>{{ roleMapping[member.role] }}</div>
+        <div class="detail-row"><label>상태:</label>{{ formattedValue(member.status) }}</div>
+        <div class="detail-row"><label>선호 매물 종류:</label>{{ formattedValue(member.prePropertyType) }}</div>
+        <div class="detail-row"><label>선호 지역:</label>{{ formattedValue(member.preArea) }}</div>
+        <div class="detail-row"><label>예산:</label>{{ formattedValue(member.budget) }}</div>
+        <div class="detail-row"><label>가입일:</label>{{ formattedValue(member.joinDate) }}</div>
+        <div class="detail-row"><label>마지막 로그인:</label>{{ formattedValue(member.lastLogin) }}</div>
+        <div class="detail-row"><label>로그인 횟수:</label>{{ formattedValue(member.loginCount) }}</div>
+        <button @click="goBack">뒤로가기</button>
+    </div>
+</body>
+</html>
+<script>
+const app = Vue.createApp({
+    data() {
+        return {
+            member: {},
+            roleMapping: {10:'관리자', 20:'매매자', 30:'일반 고객'}
+        };
+    },
+    methods: {
+        goBack() {
+            window.history.back();
+        },
+        // 성별
+        formattedGender(gender) {      
+            if (gender === 'M') return "남성";
+            if (gender === 'F') return "여성";
+            return "미정";
+        },
+        // 일반 값
+        formattedValue(value) {
+            return value ? value : "미정";
+        },
+        // 회원 정보 조회
+        fetchMemberInfo() {
+            let self = this;
+            const params = new URLSearchParams(window.location.search);
+            const clientId = params.get('clientId');
+            if (!clientId) return;
+
+            $.ajax({
+                url: "http://localhost:3009/client/info",
+                data: { clientId },
+                type: "GET",
+                dataType: "json",
+                success: (data) => {
+                    if (data.info) {
+                        self.member = data.info;
+                    } else {
+                        alert("회원 정보를 가져오지 못했습니다.");
+                    }
+                },
+                error: (err) => {
+                    console.error(err);
+                }
+            });
+        }
+    },
+    mounted() {
+        this.fetchMemberInfo();
+    }
+});
+
+app.mount('#app');
+</script>

@@ -129,28 +129,36 @@ app.get('/clients/check-username', async (req, res) => {
 // 로그인 
 app.get('/login', async (req, res) => {
   const { username, pwd } = req.query;
-  let query = `SELECT * FROM CLIENTS WHERE USERNAME = '${username}' AND PASSWORD = '${pwd}'`
-  try {
-    const result = await connection.execute(query);
-    
-    const columnNames = result.metaData.map(column => column.name);
 
-    // 쿼리 결과를 JSON 형태로 변환
-    const rows = result.rows.map(row => {
-      // 각 행의 데이터를 컬럼명에 맞게 매핑하여 JSON 객체로 변환
-      const obj = {};
-      columnNames.forEach((columnName, index) => {
-        obj[columnName] = row[index];
-      });
-      return obj;
-    });
-    res.json(rows);
+  try {
+    const result = await connection.execute(
+      `SELECT * FROM CLIENTS WHERE USERNAME = :username AND PASSWORD = :pwd`,
+      { username, pwd },
+      { outFormat: oracledb.OUT_FORMAT_OBJECT }
+    );
+
+    if (result.rows.length === 0) {
+      return res.json([]); 
+    }
+
+    const user = result.rows[0];
+
+    await connection.execute(
+      `UPDATE CLIENTS
+       SET LOGIN_COUNT = NVL(LOGIN_COUNT,0) + 1,
+           LAST_LOGIN_DATE = SYSDATE
+       WHERE CLIENT_ID = :clientId`,
+      { clientId: user.CLIENT_ID },
+      { autoCommit: true }
+    );
+
+    res.json([user]);
+
   } catch (error) {
-    console.error('Error executing query', error);
-    res.status(500).send('Error executing query');
+    console.error('Error executing login', error);
+    res.status(500).send('Error executing login');
   }
 });
-
 // 로그인 유저 정보
 app.get('/user-info', async (req, res) => {
     const { sessionId } = req.query;
@@ -224,12 +232,29 @@ app.get('/clients/delete', async (req, res) => {
 app.get('/client/info', async (req, res) => {
   const { clientId } = req.query;
   try {
-    const result = await connection.execute(
-      `SELECT C.*, USERNAME "username", NAME "name", PHONE_NUMBER "phoneNumber", CURRENT_ADDRESS "cAddr", GENDER "gender", EMAIL "email", ROLE "role", STATUS "status", `
-      + `PREFERRED_PROPERTY_TYPE "prePropertyType", BUDGET "budget", PREFERRED_AREA "preArea", TO_CHAR(DATE_OF_BIRTH, 'YYYY-MM-DD') "birth", NICKNAME "nickName" ` 
-      + `FROM CLIENTS C `
-      + `WHERE CLIENT_ID = ${clientId}`
-    );
+    let query = `
+      SELECT C.*, 
+      USERNAME "username",
+      NAME "name",
+      PHONE_NUMBER "phoneNumber",
+      CURRENT_ADDRESS "cAddr",
+      GENDER "gender",
+      EMAIL "email",
+      ROLE "role",
+      STATUS "status",
+      PREFERRED_PROPERTY_TYPE "prePropertyType",
+      BUDGET "budget",
+      PREFERRED_AREA "preArea",
+      TO_CHAR(DATE_OF_BIRTH, 'YYYY-MM-DD') "birth",
+      NICKNAME "nickName",
+      TO_CHAR(JOIN_DATE,'YYYY-MM-DD') "joinDate",
+      TO_CHAR(LAST_LOGIN_DATE,'YYYY-MM-DD HH24:MI:SS') "lastLogin",
+      LOGIN_COUNT "loginCount"
+      FROM CLIENTS C
+      WHERE CLIENT_ID = ${clientId}
+      `;
+
+    const result = await connection.execute(query);
     const columnNames = result.metaData.map(column => column.name);
     // 쿼리 결과를 JSON 형태로 변환
     const rows = result.rows.map(row => {
@@ -296,7 +321,7 @@ app.get('/client/update', async (req, res) => {
   }
 });
 
-// 매물 정보
+// 매물 리스트
 app.get('/properties', async (req, res) => {
   const { } = req.query;
   let query = `SELECT PROPERTY_ID, ADDRESS, PROPERTY_TYPE, AREA, PRICE, STATUS FROM PROPERTIES ORDER BY PROPERTY_ID DESC`
@@ -369,6 +394,100 @@ app.get('/properties/insert', async (req, res) => {
     res.status(500).send('Error inserting property');
   }
 });
+
+// 매물 수정
+app.get('/properties/update', async (req, res) => {
+  const { 
+    propertyId,
+    address,
+    propertyType,
+    buildYear,
+    floor,
+    area,
+    price,
+    sellerId,
+    remarks,
+    status,
+  } = req.query;
+  
+  try {
+    const query = `UPDATE PROPERTIES SET 
+      ADDRESS = :address,
+      PROPERTY_TYPE = :propertyType,
+      BUILD_YEAR = :buildYear,
+      FLOOR = :floor,
+      AREA = :area,
+      PRICE = :price,
+      SELLER_ID = :sellerId,
+      STATUS = :status,
+      REMARKS = :remarks
+      WHERE PROPERTY_ID = :propertyId`;
+
+    await connection.execute(
+      query, 
+      {
+      address, propertyType, buildYear, floor, area, price, sellerId, status, remarks, propertyId
+      }, 
+      { autoCommit: true }
+    );
+
+    res.json({
+      result: "success"
+    });
+  } catch (error) {
+    console.error('Error executing update', error);
+    res.status(500).send('Error executing update');
+  }
+});
+
+// 매물 정보
+app.get('/properties/info', async (req, res) => {
+  const { propertyId } = req.query;
+
+  const id = Number(propertyId);
+  if (isNaN(id)) return res.status(400).send('Invalid propertyId');
+
+  try {
+    const result = await connection.execute(
+      `SELECT P.*, 
+              C.NAME AS "SELLER_NAME",
+              P.ADDRESS "ADDRESS", 
+              P.PROPERTY_TYPE "PROPERTY_TYPE", 
+              P.BUILD_YEAR "BUILD_YEAR", 
+              P.FLOOR "FLOOR", 
+              P.AREA "AREA", 
+              P.PRICE "PRICE", 
+              P.SELLER_ID "SELLER_ID", 
+              P.STATUS "STATUS", 
+              P.REMARKS "REMARKS",
+              TO_CHAR(P.REGISTRATION_DATE, 'YYYY-MM-DD') "REGISTRATION_DATE"
+       FROM PROPERTIES P
+       LEFT JOIN CLIENTS C ON P.SELLER_ID = C.CLIENT_ID
+       WHERE P.PROPERTY_ID = :id`,
+      [id]
+    );
+
+    const columnNames = result.metaData.map(column => column.name);
+
+    const rows = result.rows.map(row => {
+      const obj = {};
+      columnNames.forEach((columnName, index) => {
+        obj[columnName] = row[index];
+      });
+      return obj;
+    });
+
+    res.json({
+      result: "success",
+      info: rows[0] || null
+    });
+  } catch (error) {
+    console.error('Error executing query', error);
+    res.status(500).send('Error executing query');
+  }
+});
+
+
 
 // 부동산 매매자 검색
 app.get('/clients/sellers', async (req, res) => {

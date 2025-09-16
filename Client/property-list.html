@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>매물 목록</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+  <style>
+    body { 
+      font-family: Arial; 
+      background:#f0f2f5; 
+      display:flex; 
+      justify-content:center; 
+      align-items:flex-start; 
+      min-height:100vh; 
+      padding:40px; 
+    }
+    .container { 
+      background:#fff; 
+      padding:30px; 
+      border-radius:10px; 
+      box-shadow:0 4px 12px rgba(0,0,0,0.1); 
+      width:100%; 
+      max-width:1000px; 
+    }
+    h2 { 
+      margin-bottom:20px; 
+      text-align:center; 
+    }
+    .back-btn-container {
+      display: flex;
+      justify-content: flex-end; 
+      margin-bottom: 15px;
+    }
+    .back-btn {
+      padding: 8px 12px;
+      border-radius: 5px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    .back-btn:hover {
+      background: #2980b9;
+    }
+    .search-box {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    .search-input, .search-select {
+      flex: 1;
+      min-width: 150px;
+      padding: 8px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    .search-button, .reset-button {
+      padding: 8px 15px;
+      border-radius: 5px;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .search-button {
+      background-color: #3498db;
+      color: white;
+    }
+    .search-button:hover {
+      background-color: #2980b9;
+    }
+    .reset-button {
+      background-color: #e74c3c;
+      color: white;
+    }
+    .reset-button:hover {
+      background-color: #c0392b;
+    }
+    table { 
+      width:100%; 
+      border-collapse:collapse; 
+      margin-top:20px; 
+    }
+    th, td { 
+      padding:12px; 
+      text-align:center; 
+      border-bottom:1px solid #ddd; 
+    }
+    th { 
+      background:#3498db; 
+      color:#fff; 
+    }
+    tr:hover { 
+      background:#f9f9f9; 
+      cursor:pointer; 
+    }
+    td a { 
+      color:#3498db; 
+      text-decoration:none; 
+      font-weight:bold; 
+    }
+    td a:hover { 
+      text-decoration:underline; 
+    }
+  </style>
+</head>
+<body>
+  <div id="app" class="container">
+    
+    <h2>매물 목록</h2>
+
+    <div class="back-btn-container">
+      <button class="back-btn" @click="goBack">뒤로가기</button>
+    </div>
+
+    <!-- 검색 박스 -->
+    <div class="search-box">
+      <input type="text" v-model="search.address" placeholder="주소 입력" class="search-input"/>
+      <select v-model="search.type" class="search-select">
+        <option value="">종류 선택</option>
+        <option value="아파트">아파트</option>
+        <option value="단독주택">단독주택</option>
+        <option value="빌라">빌라</option>
+        <option value="오피스텔">오피스텔</option>
+      </select>
+      <select v-model="search.price" class="search-select">
+        <option value="">가격 선택</option>
+        <option value="0-500000000">5억 미만</option>
+        <option value="500000000-1000000000">5~10억 미만</option>
+        <option value="1000000000-9999999999">10억 이상</option>
+      </select>
+      <button class="search-button" @click="fnSearchProperties">검색</button>
+      <button class="reset-button" @click="fnResetSearch">초기화</button>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>번호</th>
+          <th>주소</th>
+          <th>유형</th>
+          <th>면적(㎡)</th>
+          <th>가격(원)</th>
+          <th>상태</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="prop in filteredProperties" :key="prop.PROPERTY_ID">
+          <td>{{ prop.PROPERTY_ID }}</td>
+          <td><a href="#" @click.prevent="fnViewProperty(prop.PROPERTY_ID)">{{ prop.ADDRESS }}</a></td>
+          <td>{{ prop.PROPERTY_TYPE }}</td>
+          <td>{{ prop.AREA }}</td>
+          <td>{{ formatPrice(prop.PRICE)}}</td>
+          <td>{{ prop.STATUS }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  
+  <script>
+    const app = Vue.createApp({
+      data() {
+        return {
+          properties: [],
+          filteredProperties: [],
+          search: {
+            address: '',
+            type: '',
+            price: ''
+          }
+        };
+      },
+      methods: {
+        // 숫자 함수
+        formatPrice(value) {
+          if (!value) return '';
+          const eok = Math.floor(value / 100000000); 
+          const rest = value % 100000000;
+          const man = Math.floor(rest / 10000); 
+          let result = '';
+          if (eok > 0) result += eok + '억';
+          if (man > 0) result += ' ' + man + '만원';
+          return result.trim();
+        },
+        // 뒤로가기
+        goBack() {
+          window.location.href = "index.html";
+        },
+        // 매물 불러오기
+        fnPropertyList() {
+          let self = this;
+          $.ajax({
+            url: "http://localhost:3009/properties",
+            dataType: "json",
+            type: "GET",
+            success: function (data) {
+              self.properties = data.list;
+
+              // 뒤로가기 시 검색 상태 복원
+              const savedSearch = JSON.parse(sessionStorage.getItem('propertySearch') || '{}');
+              if (savedSearch && Object.keys(savedSearch).length) {
+                self.search = savedSearch;
+                self.fnSearchProperties();
+              } else {
+                self.filteredProperties = self.properties.slice();
+              }
+            }
+          });
+        },
+        fnViewProperty(propertyId) {
+          // 현재 페이지 URL 저장
+          sessionStorage.setItem('prevPage', location.href);
+          sessionStorage.setItem('propertySearch', JSON.stringify(this.search));
+          window.location.href = `property-detail.html?propertyId=${propertyId}`;
+        },
+
+        // 검색
+        fnSearchProperties() {
+          let self = this;
+          const addr = self.search.address.trim().toLowerCase();
+          const type = self.search.type;
+          const priceRange = self.search.price;
+
+          let minPrice = 0;
+          let maxPrice = Infinity;
+
+          if (priceRange) {
+            const parts = priceRange.split('-');
+            minPrice = Number(parts[0]);
+            maxPrice = Number(parts[1]);
+          }
+
+          self.filteredProperties = self.properties.filter(prop => {
+            const matchAddress = addr ? prop.ADDRESS.toLowerCase().includes(addr) : true;
+            const matchType = type ? prop.PROPERTY_TYPE === type : true;
+            const matchPrice = prop.PRICE >= minPrice && prop.PRICE < maxPrice;
+            return matchAddress && matchType && matchPrice;
+          });
+        },
+
+        // 검색 초기화
+        fnResetSearch() {
+          this.search = { address:'', type:'', price:'' };
+          this.filteredProperties = this.properties.slice();
+        }
+      },
+      mounted() {
+        this.fnPropertyList();
+      }
+    });
+
+    app.mount('#app');
+  </script>
+</body>
+</html>
+
+
+
+

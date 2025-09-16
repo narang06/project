@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>매물 정보 상세보기</title>
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        background: #f0f2f5;
+    }
+    .detail-container {
+        max-width: 600px;
+        margin: 20px auto;
+        padding: 20px;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .detail-container h2 {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    .detail-row {
+        margin-bottom: 10px;
+        line-height: 1.5;
+    }
+    .detail-row label {
+        font-weight: bold;
+        margin-right: 5px;
+    }
+    .detail-container button {
+        margin-top: 20px;
+        padding: 10px 15px;
+        background-color: #3498db;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+</style>
+</head>
+<body>
+    <div id="app" class="detail-container">
+        <h2>매물 상세 정보</h2>
+        <div class="detail-row"><label>매물 번호:</label>{{ prop.PROPERTY_ID }}</div>
+        <div class="detail-row"><label>매물 주소:</label>{{ prop.ADDRESS }}</div>
+        <div class="detail-row"><label>매물 분류:</label>{{ prop.PROPERTY_TYPE }}</div>
+        <div class="detail-row"><label>건축연도:</label>{{ formattedValue(prop.BUILD_YEAR) }}</div>
+        <div class="detail-row"><label>층수:</label>{{ formattedValue(prop.FLOOR) }}</div>
+        <div class="detail-row"><label>면적:</label>{{ formattedValue(prop.AREA) }}</div>
+        <div class="detail-row"><label>가격:</label>{{ formatPrice(formattedValue(prop.PRICE)) }}</div>
+        <div class="detail-row"><label>등록 날짜:</label>{{ formattedDate(formattedValue(prop.REGISTRATION_DATE)) }}</div>
+        <div class="detail-row"><label>부동산 매매인:</label>{{ formattedValue(prop.SELLER_NAME) }}</div>
+        <div class="detail-row"><label>상태:</label>{{ formattedValue(prop.STATUS) }}</div>
+        <div class="detail-row"><label>특이사항:</label>{{ formattedValue(prop.REMARKS) }}</div>
+        <button @click="goBack">뒤로가기</button>
+    </div>
+</body>
+</html>
+<script>
+const app = Vue.createApp({
+    data() {
+        return {
+            prop: {},
+        };
+    },
+    methods: {
+        goBack() {
+            window.history.back();
+        },
+        formattedValue(value) {
+            return value ? value : "미정";
+        },
+        formattedDate(value) {
+            if (!value) return "미정";
+
+            // 날짜 형식이면 yyyy-mm-dd만 추출
+            if (!isNaN(Date.parse(value))) {
+                const date = new Date(value);
+                const yyyy = date.getFullYear();
+                const mm = String(date.getMonth() + 1).padStart(2, '0');
+                const dd = String(date.getDate()).padStart(2, '0');
+                return `${yyyy}-${mm}-${dd}`;
+            }
+
+            return value;
+        },
+
+        formatPrice(value) {
+          if (!value) return '';
+          const eok = Math.floor(value / 100000000); 
+          const rest = value % 100000000;
+          const man = Math.floor(rest / 10000); 
+          let result = '';
+          if (eok > 0) result += eok + '억';
+          if (man > 0) result += ' ' + man + '만원';
+          return result.trim();
+        },
+        // 회원 정보 조회
+        fetchpropertieInfo() {
+            let self = this;
+            const params = new URLSearchParams(window.location.search);
+            const propertyId = params.get('propertyId');
+            if (!propertyId) return;
+
+            $.ajax({
+                url: "http://localhost:3009/properties/info",
+                data: { propertyId: propertyId },
+                type: "GET",
+                dataType: "json",
+                success: (data) => {
+                    if (data.info) {
+                        self.prop = data.info;
+                    } else {
+                        alert("매물 정보를 가져오지 못했습니다.");
+                    }
+                },
+                error: (err) => {
+                    console.error(err);
+                }
+            });
+        }
+    },
+    mounted() {
+        let self = this;
+        self.fetchpropertieInfo();
+    }
+});
+
+app.mount('#app');
+</script>

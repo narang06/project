@@ -1,21 +1,69 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <title>매물 추가</title>
-  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-  <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
-  <style>
-    body { font-family: Arial; background:#f0f2f5; display:flex; justify-content:center; align-items:center; min-height:100vh; }
-    .container { background:#fff; padding:30px; border-radius:10px; box-shadow:0 4px 12px rgba(0,0,0,0.1); width:100%; max-width:500px; }
-    .form-group { margin-bottom:15px; }
-    .form-group label { display:block; margin-bottom:5px; font-weight:bold; }
-    .form-group input, .form-group select, .form-group textarea {
-      width:100%; padding:10px; border:1px solid #ccc; border-radius:5px; box-sizing:border-box;
-    }
-    .submit-btn { background:#3498db; color:#fff; padding:12px; border:none; border-radius:5px; cursor:pointer; width:100%; font-weight:bold; }
-    .submit-btn:hover { background:#2980b9; }
-  </style>
+    <meta charset="UTF-8">
+    <title>매물 추가</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+    <style>
+        body { 
+            font-family: Arial; 
+            background:#f0f2f5; 
+            display:flex; 
+            justify-content:center; 
+            align-items:center; 
+            min-height:100vh; 
+        }
+        .container { 
+            background:#fff; 
+            padding:30px; 
+            border-radius:10px; 
+            box-shadow:0 4px 12px rgba(0,0,0,0.1); 
+            width:100%; 
+            max-width:500px; 
+        }
+        .form-group { 
+            margin-bottom:15px; 
+        }
+        .form-group label { 
+            display:block; 
+            margin-bottom:5px; 
+            font-weight:bold; 
+        }
+        .form-group input, .form-group select, .form-group textarea {
+        width:100%; 
+        padding:10px; 
+        border:1px solid #ccc; 
+        border-radius:5px; 
+        box-sizing:border-box;
+        }
+        .submit-btn { 
+            background:#3498db; 
+            color:#fff; 
+            padding:12px; 
+            border:none; 
+            border-radius:5px; 
+            cursor:pointer; 
+            width:100%; 
+            font-weight:bold; 
+        }
+        .submit-btn:hover { 
+            background:#2980b9; 
+        }
+        .cancel-btn {
+            background: #fff;
+            color: #555;
+            border: 1px solid #ccc;
+            padding: 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px; 
+        }
+        .cancel-btn:hover {
+            background: #f0f0f0;
+        }
+    </style>
 </head>
 <body>
     <div id="app" class="container">
@@ -28,10 +76,11 @@
         <div class="form-group">
             <label>매물 유형</label>
             <select v-model="propertyType" required>
-            <option value="아파트">아파트</option>
-            <option value="주택">주택</option>
-            <option value="오피스텔">오피스텔</option>
-            <option value="상가">상가</option>
+                <option value="아파트">아파트</option>
+                <option value="주택">주택</option>
+                <option value="오피스텔">오피스텔</option>
+                <option value="상가">상가</option>
+                <option value="기타">기타</option>
             </select>
         </div>
         <div class="form-group">
@@ -64,6 +113,7 @@
             <textarea v-model="remarks"></textarea>
         </div>
         <button type="submit" class="submit-btn">매물 등록</button>
+        <button type="button" class="cancel-btn" @click="goBack">취소</button>
         </form>
     </div>
 </body>
@@ -84,8 +134,56 @@ const app = Vue.createApp({
         };
     },
     methods: {
+        goBack() {
+            window.location.href = "main.html?menu=properties";
+        },
+        // 매매 등록
         fnAddProperty() {
             let self = this;
+
+            // 연도 제한
+            if(self.buildYear > 2050 || self.buildYear < 1950){
+                alert("건축연도는 1950년 부터 2050년도 사이여야 합니다.");
+                return;
+            }
+
+            // 층수 제한
+            if (self.floor && (self.floor < -5 || self.floor > 100)) {
+                alert("층수는 -5(지하) ~ 100 사이여야 합니다.");
+                return;
+            }
+
+            // 면적 제한
+            if (self.area <= 0 || self.area > 10000) {
+                alert("면적은 1㎡ 이상 10,000㎡ 이하만 가능합니다.");
+                return;
+            }
+
+            // 가격 제한
+            if (self.price < 1000000 || self.price > 100000000000) { // 100만 ~ 1000억
+                alert("가격은 100만원 이상 1000억 이하만 가능합니다.");
+                return;
+            }
+
+            // 주소 입력 여부
+            if (!self.address || self.address.length < 5) {
+                alert("주소를 5자 이상 입력해주세요.");
+                return;
+            }
+
+            // 매물 유형 선택 여부
+            if (!self.propertyType) {
+                alert("매물 유형을 선택해주세요.");
+                return;
+            }
+
+            // 비고 글자 수 제한
+            if (self.remarks && self.remarks.length > 500) {
+                alert("비고는 500자 이내로 입력해주세요.");
+                return;
+            }
+
+
             const param = {
                 address: self.address,
                 propertyType: self.propertyType,
@@ -112,6 +210,7 @@ const app = Vue.createApp({
                 }
             });
         },
+        // 부동산 매매자 찿기
         fetchSellers() {
             let self = this;
             $.ajax({

@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>매물 정보 수정</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .form-container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+            max-width: 500px;
+            width: 200%;
+            box-sizing: border-box;
+        }
+
+        .form-container h2 {
+            text-align: center;
+            margin-bottom: 25px;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #555;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        .button-group button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 48%;
+            font-size: 14px;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        .button-group button:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-submit {
+            background-color: #3498db;
+            color: white;
+        }
+
+        .btn-submit:hover {
+            background-color: #2980b9;
+        }
+
+        .btn-cancel {
+            background-color: #fff;
+            color: #555;
+            border: 1px solid #ccc;
+        }
+
+        .btn-cancel:hover {
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="form-container">
+            <h2>매물정보 수정</h2>
+
+            <div class="form-group">
+                <label>매물번호</label>
+                <input type="text" v-model="info.PROPERTY_ID" disabled>
+            </div>
+
+            <div class="form-group">
+                <label>주소</label>
+                <input type="text" v-model="info.ADDRESS">
+            </div>
+
+            <div class="form-group">
+                <label>매물 유형</label>
+                <select v-model="info.PROPERTY_TYPE">
+                    <option value="아파트">아파트</option>
+                    <option value="주택">주택</option>
+                    <option value="오피스텔">오피스텔</option>
+                    <option value="상가">상가</option>
+                    <option value="기타">기타</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>건축년도</label>
+                <input type="number" v-model="info.BUILD_YEAR">
+            </div>
+
+            <div class="form-group">
+                <label>층수</label>
+                <input type="number" v-model="info.FLOOR">
+            </div>
+
+            <div class="form-group">
+                <label>면적 (㎡)</label>
+                <input type="number" v-model="info.AREA">
+            </div>
+
+            <div class="form-group">
+                <label>가격 (원)</label>
+                <input type="number" v-model="info.PRICE">
+            </div>
+
+            <div class="form-group">
+                <label>매매자 선택</label>
+                <select v-model="info.SELLER_ID">
+                    <option value="">선택 안 함</option>
+                    <option v-for="seller in sellers" :key="seller.CLIENT_ID" :value="seller.CLIENT_ID">
+                        {{ seller.NAME }}
+                    </option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>상태</label>
+                <select v-model="info.STATUS">
+                    <option value="판매중">판매중</option>
+                    <option value="계약진행중">계약진행중</option>
+                    <option value="판매완료">판매완료</option>
+                    <option value="보류">보류</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>비고</label>
+                <textarea v-model="info.REMARKS"></textarea>
+            </div>
+            <div class="button-group">
+                <button class="btn-submit" @click="fnEditProperty">수정 완료</button>
+                <button class="btn-cancel" @click="fnCancel">취소</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+<script>
+const app = Vue.createApp({
+    data() {
+        return {
+            info: {}, // 매물 정보
+            sellers: [], // 매매자 목록
+            propertyId: ''
+        };
+    },
+    methods: {
+        fetchSellers() {
+            let self = this;
+            $.ajax({
+                url: "http://localhost:3009/clients",
+                type: "GET",
+                dataType: "json",
+                success: function(data) {
+                    self.sellers = data.list.filter(member => member.ROLE === 20);
+                }
+            });
+        },
+        fnCancel() {
+            location.href = "main.html?menu=properties";
+        },
+        // 매물 정보 수정 함수
+        fnEditProperty() {
+            let self = this;
+
+            const param = {
+                propertyId: self.info.PROPERTY_ID,
+                address: self.info.ADDRESS,
+                propertyType: self.info.PROPERTY_TYPE,
+                buildYear: self.info.BUILD_YEAR,
+                floor: self.info.FLOOR,
+                area: self.info.AREA,
+                price: self.info.PRICE,
+                sellerId: self.info.SELLER_ID,
+                status: self.info.STATUS,
+                remarks: self.info.REMARKS
+            };
+            $.ajax({
+                url: "http://localhost:3009/properties/update",
+                type: "GET",
+                dataType: "json",
+                data: param,
+                success: function(data) {
+                    alert("매물 정보가 수정되었습니다!");
+                    location.href = "main.html?menu=properties";
+                },
+                error: function(err) {
+                    console.error(err);
+                    alert("수정 실패");
+                }
+            });
+        },
+        // 매물 정보 불러오기 함수
+        fnFetchProperty() {
+            let self = this;
+            const params = new URLSearchParams(window.location.search);
+            self.propertyId = params.get('propertyId') || '';
+            if (!self.propertyId) return;
+
+            $.ajax({
+                url: "http://localhost:3009/properties/info",
+                type: "GET",
+                dataType: "json",
+                data: { propertyId: self.propertyId },
+                success: function(data) {
+                    self.info = data.info;
+                },
+                error: function(err) {
+                    console.error(err);
+                    alert("매물 정보를 불러오지 못했습니다.");
+                }
+            });
+        }
+    },
+    mounted() {
+        this.fetchSellers();
+        this.fnFetchProperty();
+    }
+});
+
+app.mount('#app');
+</script>

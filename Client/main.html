@@ -112,6 +112,7 @@
             padding: 15px;
             text-align: left;
             border-bottom: 1px solid #ddd;
+            font-size: 14px;
         }
         .full-width-table th {
             background-color: #f2f2f2;
@@ -119,10 +120,8 @@
             color: #555;
         }
         .full-width-table tbody tr:hover {
-            background-color: #f9f9f9;
+            background-color: #e8f4fd;
         }
-
-        /* 버튼 스타일 */
         .add-button, .action-button {
             padding: 8px 15px;
             border: none;
@@ -153,10 +152,9 @@
         .delete-button:hover {
             background-color: #c0392b;
         }
-        /* 로그아웃 버튼 스타일 */
         .logout-button {
             padding: 12px 15px;
-            margin-top: auto; /* 메뉴들과 분리하기 위해 아래로 밀어냄 */
+            margin-top: auto;
             border-radius: 8px;
             cursor: pointer;
             background-color: #e74c3c;
@@ -167,6 +165,28 @@
         .logout-button:hover {
             background-color: #c0392b;
             transform: translateY(-2px);
+        }
+       .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+        }
+
+        .search-input, .search-select {
+            flex: 1;
+            min-width: 150px;
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        .search-button {
+            flex: 0 0 auto;
+        }
+
+        .reset-button {
+            flex: 0 0 auto;
         }
     </style>
 </head>
@@ -199,11 +219,11 @@
                         <p>{{ totalProperties }}건</p>
                     </div>
                     <div class="dashboard-card">
-                        <h3>오늘 접속자</h3>
-                        <p>{{ dailyVisitors }}명</p>
+                        <h3>오늘 상담글</h3>
+                        <p>{{ dailyconsultations }}명</p>
                     </div>
                     <div class="dashboard-card">
-                        <h3>오늘 로그인</h3>
+                        <h3>오늘 접속자</h3>
                         <p>{{ dailyLogins }}건</p>
                     </div>
                 </div>
@@ -227,7 +247,11 @@
                     <tbody>
                         <tr v-for="member in members" :key="member.CLIENT_ID">
                             <td>{{ member.CLIENT_ID }}</td>
-                            <td>{{ member.NAME }}</td>
+                            <td>
+                                <a href="#" @click.prevent="fnViewMember(member.CLIENT_ID)">
+                                    {{ member.NAME }}
+                                </a>
+                            </td>
                             <td>{{ member.EMAIL }}</td>
                             <td>{{ roleMapping[member.ROLE] }}</td>
                             <td>{{ member.STATUS }}</td>
@@ -241,6 +265,24 @@
             </div>
             
             <div v-else-if="currentMenu === 'properties'" class="content-box">
+                <div class="search-box">
+                    <input type="text" v-model="propertySearch.address" placeholder="주소 입력" class="search-input"/>
+                    <select v-model="propertySearch.type" class="search-select">
+                        <option value="">종류 선택</option>
+                        <option value="아파트">아파트</option>
+                        <option value="단독주택">단독주택</option>
+                        <option value="빌라">빌라</option>
+                        <option value="오피스텔">오피스텔</option>
+                    </select>
+                    <select v-model="propertySearch.price" class="search-select">
+                        <option value="">가격 선택</option>
+                        <option value="0-500000000">5억 미만</option>
+                        <option value="500000000-1000000000">5~10억 미만</option>
+                        <option value="1000000000-9999999999">10억 이상</option>
+                    </select>
+                    <button class="add-button search-button" @click="fnSearchProperties">검색</button>
+                    <button class="delete-button reset-button" @click="fnResetSearch">초기화</button>
+                </div>
                 <div class="header-with-button">
                     <h2>매물 관리</h2>
                     <button class="add-button" @click="fnAddProperty">매물 추가</button>
@@ -258,9 +300,11 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="prop in properties" :key="prop.PROPERTY_ID">
+                        <tr v-for="prop in filteredProperties" :key="prop.PROPERTY_ID">
                             <td>{{ prop.PROPERTY_ID }}</td>
-                            <td>{{ prop.ADDRESS }}</td>
+                            <td>
+                                <a href="#" @click.prevent="fnViewProperty(prop.PROPERTY_ID)">{{ prop.ADDRESS }}</a>
+                            </td>
                             <td>{{ prop.PROPERTY_TYPE }}</td>
                             <td>{{ prop.AREA }}</td>
                             <td>{{ formatPrice(prop.PRICE)}}</td>
@@ -275,11 +319,96 @@
             </div>
             <div v-else-if="currentMenu === 'propertySearch'" class="content-box">
                 <h2>매물 검색</h2>
-                <p>매물 검색 페이지</p>
+                <div class="search-box">
+                    <input type="text" v-model="propertySearch.address" placeholder="주소 입력" class="search-input"/>
+                    <select v-model="propertySearch.type" class="search-select">
+                        <option value="">종류 선택</option>
+                        <option value="아파트">아파트</option>
+                        <option value="단독주택">단독주택</option>
+                        <option value="빌라">빌라</option>
+                        <option value="오피스텔">오피스텔</option>
+                    </select>
+                    <select v-model="propertySearch.price" class="search-select">
+                        <option value="">가격 선택</option>
+                        <option value="0-500000000">5억 미만</option>
+                        <option value="500000000-1000000000">5~10억 미만</option>
+                        <option value="1000000000-9999999999">10억 이상</option>
+                    </select>
+                    <button class="add-button search-button" @click="fnSearchProperties">검색</button>
+                    <button class="delete-button reset-button" @click="fnResetSearch">초기화</button>
+                </div>
+
+                <table class="full-width-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>주소</th>
+                            <th>종류</th>
+                            <th>면적(m²)</th>
+                            <th>가격(만원)</th>
+                            <th>상태</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="prop in filteredProperties" :key="prop.PROPERTY_ID">
+                            <td>{{ prop.PROPERTY_ID }}</td>
+                            <td>
+                                <a href="#" @click.prevent="fnViewProperty(prop.PROPERTY_ID)">{{ prop.ADDRESS }}</a>
+                            </td>
+                            <td>{{ prop.PROPERTY_TYPE }}</td>
+                            <td>{{ prop.AREA }}</td>
+                            <td>{{ formatPrice(prop.PRICE) }}</td>
+                            <td>{{ prop.STATUS }}</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
+                
             <div v-else-if="currentMenu === 'contracts'" class="content-box">
                 <h2>계약 관리</h2>
-                <p>계약 관리 페이지</p>
+                    <div class="search-box">
+                    <input type="text" v-model="contractSearch.address" placeholder="매물 주소 입력" class="search-input" />
+                    <input type="text" v-model="contractSearch.brokerName" placeholder="부동산 매매인 이름 입력" class="search-input" />
+                    <select v-model="contractSearch.status" class="search-select">
+                        <option value="">상태 선택</option>
+                        <option value="계약진행중">계약진행중</option>
+                        <option value="계약완료">계약완료</option>
+                        <option value="계약취소">계약취소</option>
+                    </select>
+                    <button class="add-button search-button" @click="fnSearchContracts">검색</button>
+                    <button class="delete-button reset-button" @click="fnResetContractSearch">초기화</button>
+                </div>
+                <div class="header-with-button" v-if="user && user.ROLE === 10">
+                    <button class="add-button" @click="fnAddContract">계약 추가</button>
+                </div>
+                <table class="full-width-table">
+                    <thead>
+                        <tr>
+                            <th>계약 ID</th>
+                            <th>매물 주소</th>
+                            <th>계약자</th>
+                            <th>계약 상태</th>
+                            <th>계약 날짜</th>
+                            <th>관리</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="contract in filteredContracts" :key="contract.CONTRACT_ID">
+                            <td>{{ contract.CONTRACT_ID }}</td>
+                            <td>
+                                <a href="#" @click.prevent="fnViewContract(contract.CONTRACT_ID)">{{ contract.PROPERTY_ADDRESS }}</a>
+                            </td>
+                            <td>{{ contract.CLIENT_NAME }}</td>
+                            <td>{{ contract.STATUS }}</td>
+                            <td>{{ formattedDate(contract.CONTRACT_DATE) }}</td>
+                            <td v-if="user && user.ROLE === 10">
+                                <button class="action-button edit-button" @click="fnEditContract(contract.CONTRACT_ID)">수정</button>
+                                <button class="action-button delete-button" @click="fnRemoveContract(contract.CONTRACT_ID)">삭제</button>
+                            </td>
+                            <td v-else>-</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
             <div v-else-if="currentMenu === 'consultations'" class="content-box">
                 <h2>고객 상담 게시판</h2>
@@ -303,8 +432,9 @@
             </div>
         </div>
     </div>
-    
-    <script>
+</body>
+</html>
+   <script>
         const app = Vue.createApp({
             data() {
                 return {
@@ -323,15 +453,28 @@
                     user: null, 
                     totalMembers: 0,
                     totalProperties: 0,
-                    dailyVisitors: 0,
+                    dailyconsultations: 0,
                     dailyLogins: 0,
                     members: [], // 전체 회원 목록
                     properties: [], // 전체 매물 목록 
+                    contracts: [], // 전체 계약 목록
                     roleMapping: { // 역활 부분 변환
                         10: '관리자',
                         20: '부동산 매매자',
                         30: '일반 회원'
-                    }
+                    },
+                    propertySearch: {
+                        address: '',
+                        type: '',
+                        price: ''
+                    },
+                    contractSearch: {
+                        address: '',
+                        brokerName: '',
+                        status: ''
+                    },
+                    filteredProperties: [], // 매물 검색 결과
+                    filteredContracts: [] // 계약 검색 결과
                 }
             },
             computed: {
@@ -409,17 +552,19 @@
                         success: function(data) {
                             if (data && data.length > 0) {
                                 self.user = data[0];
-                                if (self.filteredMenus.length > 0) {
+                                
+                                const params = new URLSearchParams(window.location.search);
+                                const menuParam = params.get('menu');
+
+                                if(menuParam) {
+                                    self.currentMenu = menuParam;
+                                } else if (self.filteredMenus.length > 0) {
                                     self.currentMenu = self.filteredMenus[0].id;
                                 }
                             } else {
                                 window.location.href = "/Client/index.html"; 
                             }
                         },
-                        error: function(err) {
-                            console.error("사용자 정보 가져오기 실패:", err);
-                            window.location.href = "/Client/index.html";
-                        }
                     });
                 },
                 // 회원 목록을 서버에서 가져오는 함수
@@ -459,6 +604,10 @@
                 fnEdit: function(clientId){
                     location.href="client-edit.html?clientId=" + clientId;
                 },
+                // 회원상세 보기
+                fnViewMember(clientId) {
+                    window.location.href = `client-detail.html?clientId=${clientId}`;
+                },
                 // 로그아웃
                 fnLogout: function(){
                     sessionStorage.removeItem("sessionId");
@@ -479,6 +628,7 @@
                         success: function (data) {
                             self.properties = data.list;
                             self.totalProperties = data.list.length;
+                            self.filteredProperties = self.properties.slice();
                         }
                     });
                 },
@@ -504,17 +654,98 @@
                 // 매물 수정
                 fnEditProperty: function(propertyId){
                     location.href="property-edit.html?propertyId=" + propertyId;
+                },
+                // 매물 상세 보기
+                fnViewProperty: function(propertyId) {
+                    window.location.href = `property-detail.html?propertyId=${propertyId}`;
+                },
+                // 매물 검색
+                fnSearchProperties() {
+                    let self = this;
+                    const addr = self.propertySearch.address.trim().toLowerCase();
+                    const type = self.propertySearch.type;
+                    const priceRange = self.propertySearch.price;
+
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('menu', self.currentMenu);
+                    if (addr) url.searchParams.set('address', addr); else url.searchParams.delete('address');
+                    if (type) url.searchParams.set('type', type); else url.searchParams.delete('type');
+                    if (priceRange) url.searchParams.set('price', priceRange); else url.searchParams.delete('price');
+
+                    window.history.pushState({}, '', url.toString());
+
+                    let minPrice = 0;
+                    let maxPrice = Infinity;
+                    if (priceRange) {
+                        const parts = priceRange.split('-');
+                        minPrice = Number(parts[0]);
+                        maxPrice = Number(parts[1]);
+                    }
+                    self.filteredProperties = self.properties.filter(prop => {
+                        const matchAddress = addr ? prop.ADDRESS.toLowerCase().includes(addr) : true;
+                        const matchType = type ? prop.PROPERTY_TYPE === type : true;
+                        const matchPrice = prop.PRICE >= minPrice && prop.PRICE < maxPrice;
+                        return matchAddress && matchType && matchPrice;
+                    });
+                },
+
+                // 매물 검색 초기화
+                fnResetSearch() {
+                    let self = this;
+                    self.propertySearch.address = '';
+                    self.propertySearch.type = '';
+                    self.propertySearch.price = '';
+                    self.filteredProperties = self.properties.slice();
+                },
+                // 계약 검색
+                fnSearchContracts: function() {
+                    let self = this;
+                    const searchAddr = self.contractSearch.address.toLowerCase();
+                    const searchBroker = self.contractSearch.brokerName.toLowerCase();
+                    const searchStatus = self.contractSearch.status;
+
+                    const currentList = self.user.ROLE === 10 ? self.contracts : self.filteredContracts;
+                    
+                    self.filteredContracts = currentList.filter(contract => {
+                        const matchAddr = !searchAddr || (contract.PROPERTY_ADDRESS && contract.PROPERTY_ADDRESS.toLowerCase().includes(searchAddr));
+                        const matchBroker = !searchBroker || (contract.BROKER_NAME && contract.BROKER_NAME.toLowerCase().includes(searchBroker));
+                        const matchStatus = !searchStatus || contract.STATUS === searchStatus;
+                        
+                        return matchAddr && matchBroker && matchStatus;
+                    });
+                },
+
+                // 계약 검색 초기화
+                fnResetContractSearch: function() {
+                    let self = this;
+                    self.contractSearch.address = '';
+                    self.contractSearch.brokerName = '';
+                    self.contractSearch.status = '';
+                    self.fnApplyContractFilter(); // 다시 역할 기반으로 필터링
                 }
-
-
             }, // 끝
             mounted() { // 시작하자마자 실행
                 let self = this;
                 self.fnLoginInfo();
+                self.fnList();
+                self.fnPropertyList();
+           
+                const params = new URLSearchParams(window.location.search);
+                const addressParam = params.get('address');
+                const typeParam = params.get('type');
+                const priceParam = params.get('price');
+
+                if (addressParam || typeParam || priceParam) {
+                    self.search.address = addressParam || '';
+                    self.search.type = typeParam || '';
+                    self.search.price = priceParam || '';
+                    
+                    setTimeout(() => {
+                        self.fnSearchProperties();
+                    }, 500);
+                }
             }
         });
 
-        app.mount('#app');
-    </script>
-</body>
-</html>
+    app.mount('#app');
+</script>

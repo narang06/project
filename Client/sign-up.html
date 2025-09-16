@@ -113,6 +113,20 @@ h2 {
     background-color: #007bff;
     color: #fff;
 }
+.cancel-button {
+  background-color: #fff;
+  color: #555;             
+  border: 1px solid #ccc;  
+  padding: 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 10px;
+}
+
+.cancel-button:hover {
+  background-color: #f2f2f2; 
+}
 </style>
 </head>
 <body>
@@ -207,6 +221,7 @@ h2 {
         <button type="button" class="register-button" @click="fnSignUp">
             {{ isAdminMode ? '회원 추가 완료' : '회원가입 완료' }}
         </button>
+        <button type="button" class="cancel-button" @click="goBack">취소</button>
     </form>
 </div>
 </body>
@@ -235,6 +250,9 @@ const app = Vue.createApp({
         };
     },
     methods: {
+        goBack() {
+            window.location.href = "main.html?menu=members";
+        },           
         checkUserName() {
             let self = this;
             if(!self.userName) {
