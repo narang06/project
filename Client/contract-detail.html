@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>계약 상세 정보</title>
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        background: #f0f2f5;
+    }
+    .detail-container {
+        max-width: 600px;
+        margin: 20px auto;
+        padding: 20px;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .detail-container h2 {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    .detail-row {
+        margin-bottom: 10px;
+        line-height: 1.5;
+    }
+    .detail-row label {
+        font-weight: bold;
+        margin-right: 5px;
+    }
+    .detail-container button {
+        margin-top: 20px;
+        padding: 10px 15px;
+        background-color: #3498db;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+</style>
+</head>
+<body>
+    <div id="app" class="detail-container">
+        <h2>계약 상세 정보</h2>
+        <div class="detail-row"><label>계약 번호:</label>{{ contract.CONTRACT_ID }}</div>
+        <div class="detail-row"><label>매수인:</label>{{ formattedValue(contract.CLIENT_NAME) }}</div>
+        <div class="detail-row"><label>매물 주소:</label>{{ formattedValue(contract.PROPERTY_ADDRESS) }}</div>
+        <div class="detail-row"><label>매물 분류:</label>{{ formattedValue(contract.PROPERTY_TYPE) }}</div>
+        <div class="detail-row"><label>계약일:</label>{{ formattedDate(contract.CONTRACT_DATE) }}</div>
+        <div class="detail-row"><label>계약 금액:</label>{{ formatPrice(contract.CONTRACT_AMOUNT) }}</div>
+        <div class="detail-row"><label>중개 수수료:</label>{{ formatPrice(contract.COMMISSION) }}</div>
+        <div class="detail-row"><label>잔금일:</label>{{ formattedDate(contract.BALANCE_DATE) }}</div>
+        <div class="detail-row"><label>계약완료 예정일:</label>{{ formattedDate(contract.ESTIMATED_COMPLETION_DATE) }}</div>
+        <div class="detail-row"><label>계약 상태:</label>{{ formattedValue(contract.STATUS) }}</div>
+        <div class="detail-row"><label>중개인:</label>{{ formattedValue(contract.BROKER_NAME) }}</div>
+        <div class="detail-row"><label>비고:</label>{{ formattedValue(contract.REMARKS) }}</div>
+        <button @click="goBack">뒤로가기</button>
+    </div>
+</body>
+</html>
+<script>
+    const app = Vue.createApp({
+        data() {
+            return {
+                contract: {},
+            };
+        },
+        methods: {
+            goBack() {
+                window.history.back();
+            },
+            formattedValue(value) {
+                return value ? value : "미정";
+            },
+            formattedDate(value) {
+                if (!value) return "미정";
+                return value; // 이미 yyyy-mm-dd 형식으로 넘어옴
+            },
+            formatPrice(value) {
+                if (!value || isNaN(value)) return "미정";
+                const num = Number(value);
+                const eok = Math.floor(num / 100000000); 
+                const man = Math.floor((num % 100000000) / 10000); 
+                let result = '';
+                if (eok > 0) result += eok + '억';
+                if (man > 0) result += ' ' + man + '만원';
+                return result.trim();
+            },
+            fetchContractInfo() {
+                let self = this;
+                const params = new URLSearchParams(window.location.search);
+                const contractId = params.get('contractId');
+                if (!contractId) return;
+
+                $.ajax({
+                    url: "http://localhost:3009/contracts/info",
+                    data: { contractId: contractId },
+                    type: "GET",
+                    dataType: "json",
+                    success: (data) => {
+                        if (data.info) {
+                            self.contract = data.info;
+                        } else {
+                            alert("계약 정보를 가져오지 못했습니다.");
+                        }
+                    },
+                    error: (err) => {
+                        console.error(err);
+                    }
+                });
+            }
+        },
+        mounted() {
+            this.fetchContractInfo();
+        }
+    });
+    app.mount('#app');
+</script>

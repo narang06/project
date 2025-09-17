@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>계약 추가</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+    <style>
+        body { 
+            font-family: Arial; 
+            background:#f0f2f5; 
+            display:flex; 
+            justify-content:center; 
+            align-items:center; 
+            min-height:100vh; 
+        }
+        .container { 
+            background:#fff; 
+            padding:30px; 
+            border-radius:10px; 
+            box-shadow:0 4px 12px rgba(0,0,0,0.1); 
+            width:100%; 
+            max-width:500px; 
+        }
+        .form-group { 
+            margin-bottom:15px; 
+        }
+        .form-group label { 
+            display:block; 
+            margin-bottom:5px; 
+            font-weight:bold; 
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width:100%; 
+            padding:10px; 
+            border:1px solid #ccc; 
+            border-radius:5px; 
+            box-sizing:border-box;
+        }
+        .submit-btn { 
+            background:#3498db; 
+            color:#fff; 
+            padding:12px; 
+            border:none; 
+            border-radius:5px; 
+            cursor:pointer; 
+            width:100%; 
+            font-weight:bold; 
+        }
+        .submit-btn:hover { 
+            background:#2980b9; 
+        }
+        .cancel-btn {
+            background: #fff;
+            color: #555;
+            border: 1px solid #ccc;
+            padding: 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px; 
+        }
+        .cancel-btn:hover {
+            background: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+<div id="app" class="container">
+    <h2>계약 추가</h2>
+    <form @submit.prevent="fnAddContract">
+        <div class="form-group">
+            <label>계약 고객</label> <!-- 추후 검색가능한 드롭다운 혹은 모달 기능 추가 예정-->
+            <select v-model="selectedClientId" required>
+                <option value="">선택</option>
+                <option v-for="client in clients" :key="client.CLIENT_ID" :value="client.CLIENT_ID">
+                    {{ client.NAME }}
+                </option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>계약 매물</label> <!-- 추후 검색가능한 드롭다운 혹은 모달 기능 추가 예정-->
+            <select v-model="selectedPropertyId" required>
+                <option value="">선택</option>
+                <option v-for="prop in properties" :key="prop.PROPERTY_ID" :value="prop.PROPERTY_ID">
+                    {{ prop.ADDRESS }} ({{ prop.PROPERTY_TYPE }})
+                </option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>계약 날짜</label>
+            <input type="date" v-model="contractDate" required>
+        </div>
+        <div class="form-group">
+            <label>계약 금액</label>
+            <input type="text" v-model="contractAmount" @input="formatNumber('contractAmount')" required>
+        </div>
+        <div class="form-group">
+            <label>계약 완료 예정일</label>
+            <input type="date" v-model="estimatedCompletionDate">
+        </div>
+        <div class="form-group">
+            <label>잔금일</label>
+            <input type="date" v-model="balanceDate">
+        </div>
+        <div class="form-group">
+            <label>계약 상태</label>
+            <select v-model="status" required>
+                <option value="계약진행중">계약진행중</option>
+                <option value="계약완료">계약완료</option>
+                <option value="계약취소">계약취소</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>중개 수수료</label>
+            <input type="text" v-model="commission" @input="formatNumber('commission')">
+        </div>
+        <div class="form-group">
+            <label>중개인</label>
+            <select v-model="selectedBrokerId">
+                <option value="">선택</option>
+                <option v-for="broker in brokers" :key="broker.CLIENT_ID" :value="broker.CLIENT_ID">
+                    {{ broker.NAME }}
+                </option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>비고</label>
+            <textarea v-model="remarks"></textarea>
+        </div>
+        <button type="submit" class="submit-btn">계약 등록</button>
+        <button type="button" class="cancel-btn" @click="goBack">취소</button>
+    </form>
+</div>
+</body>
+</html>
+<script>
+    const app = Vue.createApp({
+        data() {
+            return {
+                clients: [],
+                properties: [],
+                brokers: [],
+                selectedClientId: '',
+                selectedPropertyId: '',
+                contractDate: '',
+                contractAmount: '',
+                estimatedCompletionDate: '',
+                balanceDate: '',
+                status: '계약진행중',
+                commission: '',
+                selectedBrokerId: '',
+                remarks: ''
+            }
+        },
+        methods: {
+            // 숫자 콤마 처리
+            formatNumber(field) {
+                let self = this;
+                if(!self[field]) return;
+                let value = self[field].toString().replace(/\D/g,'');
+                self[field] = value.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+            },
+            goBack() {
+                window.location.href = "main.html?menu=contracts";
+            },
+            fetchClients() {
+                let self = this;
+                $.ajax({
+                    url: "http://localhost:3009/clients",
+                    type: "GET",
+                    dataType: "json",
+                    success: function(data){
+                        self.clients = data.list.filter(c => c.ROLE === 30); // 일반 회원만
+                        self.brokers = data.list.filter(c => c.ROLE === 20); // 부동산 매매인
+                    }
+                });
+            },
+            fetchProperties() {
+                let self = this;
+                $.ajax({
+                    url: "http://localhost:3009/properties",
+                    type: "GET",
+                    dataType: "json",
+                    success: function(data){
+                        self.properties = data.list;
+                    }
+                });
+            },
+            fnAddContract() {
+                let self = this;
+
+                if(!self.selectedClientId || !self.selectedPropertyId || !self.contractDate || !self.contractAmount){
+                    alert("필수 항목을 모두 입력해주세요.");
+                    return;
+                }
+
+                const param = {
+                    clientId: self.selectedClientId,
+                    propertyId: self.selectedPropertyId,
+                    contractDate: self.contractDate,
+                    contractAmount: parseInt(self.contractAmount.replace(/,/g,''), 10),
+                    estimatedCompletionDate: self.estimatedCompletionDate || null,
+                    balanceDate: self.balanceDate || null,
+                    status: self.status,
+                    commission: self.commission ? parseInt(self.commission.replace(/,/g,''), 10) : null,
+                    brokerId: self.selectedBrokerId || null,
+                    remarks: self.remarks || null
+                };
+
+                $.ajax({
+                    url: "http://localhost:3009/contracts/insert",
+                    type: "GET",
+                    dataType: "json",
+                    data: param,
+                    success: function(data){
+                        alert("계약이 등록되었습니다!");
+                        window.location.href = "main.html?menu=contracts";
+                    },
+                    error: function(err){
+                        console.error(err);
+                        alert("등록 실패");
+                    }
+                });
+            }
+        }, //
+        mounted() {
+            this.fetchClients();
+            this.fetchProperties();
+        }
+    });
+
+    app.mount('#app');
+</script>

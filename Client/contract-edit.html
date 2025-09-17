@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>계약 수정</title>
+<script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<style>
+    body { font-family: Arial; background-color: #f0f2f5; display:flex; justify-content:center; align-items:center; min-height:100vh; margin:0; }
+    .form-container { background-color: #fff; padding:30px; border-radius:10px; box-shadow:0 6px 20px rgba(0,0,0,0.1); max-width:500px; width:200%; box-sizing:border-box; }
+    .form-container h2 { text-align:center; margin-bottom:25px; color:#333; }
+    .form-group { margin-bottom:15px; display:flex; flex-direction:column; }
+    .form-group label { font-weight:bold; margin-bottom:5px; color:#555; }
+    .form-group input, .form-group select, .form-group textarea { padding:10px; border:1px solid #ccc; border-radius:6px; font-size:14px; box-sizing:border-box; }
+    .form-group textarea { resize: vertical; min-height:60px; }
+    .button-group { display:flex; justify-content:space-between; margin-top:20px; }
+    .button-group button { padding:12px 20px; border:none; border-radius:6px; cursor:pointer; font-weight:bold; width:48%; font-size:14px; transition: background-color 0.2s, transform 0.1s; }
+    .button-group button:hover { transform: translateY(-2px); }
+    .btn-submit { background-color:#3498db; color:white; }
+    .btn-submit:hover { background-color:#2980b9; }
+    .btn-cancel { background-color:#fff; color:#555; border:1px solid #ccc; }
+    .btn-cancel:hover { background-color:#f0f0f0; }
+</style>
+</head>
+<body>
+    <div id="app">
+        <div class="form-container">
+            <h2>계약 정보 수정</h2>
+
+            <div class="form-group">
+                <label>계약번호</label>
+                <input type="text" v-model="info.CONTRACT_ID" disabled>
+            </div>
+
+            <div class="form-group">
+                <label>고객 선택</label>
+                <select v-model="info.CLIENT_ID">
+                    <option value="">선택 안 함</option>
+                    <option v-for="client in clients" :key="client.CLIENT_ID" :value="client.CLIENT_ID">
+                        {{ client.NAME }}
+                    </option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>매물 선택</label>
+                <select v-model="info.PROPERTY_ID">
+                    <option value="">선택 안 함</option>
+                    <option v-for="property in properties" :key="property.PROPERTY_ID" :value="property.PROPERTY_ID">
+                        {{ property.ADDRESS }} ({{ property.PROPERTY_TYPE }})
+                    </option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>계약 날짜</label>
+                <input type="date" v-model="info.CONTRACT_DATE">
+            </div>
+
+            <div class="form-group">
+                <label>계약금액 (원)</label>
+                <input type="text" v-model="info.CONTRACT_AMOUNT" @input="formatNumber('CONTRACT_AMOUNT')">
+            </div>
+
+            <div class="form-group">
+                <label>계약 상태</label>
+                <select v-model="info.STATUS">
+                    <option value="계약중">계약중</option>
+                    <option value="계약완료">계약완료</option>
+                    <option value="취소">취소</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>중개인 선택</label>
+                <select v-model="info.BROKER_ID">
+                    <option value="">선택 안 함</option>
+                    <option v-for="broker in brokers" :key="broker.CLIENT_ID" :value="broker.CLIENT_ID">
+                        {{ broker.NAME }}
+                    </option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>계약완료예정일</label>
+                <input type="date" v-model="info.ESTIMATED_COMPLETION_DATE">
+            </div>
+
+            <div class="form-group">
+                <label>잔금일</label>
+                <input type="date" v-model="info.BALANCE_DATE">
+            </div>
+
+            <div class="form-group">
+                <label>중개수수료 (원)</label>
+                <input type="text" v-model="info.COMMISSION" @input="formatNumber('COMMISSION')">
+            </div>
+
+            <div class="form-group">
+                <label>비고</label>
+                <textarea v-model="info.REMARKS"></textarea>
+            </div>
+
+            <div class="button-group">
+                <button class="btn-submit" @click="fnEditContract">수정 완료</button>
+                <button class="btn-cancel" @click="fnCancel">취소</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+<script>
+    const app = Vue.createApp({
+        data() {
+            return {
+                info: {
+                    CONTRACT_ID: '',
+                    CLIENT_ID: '',
+                    PROPERTY_ID: '',
+                    CONTRACT_DATE: '',
+                    CONTRACT_AMOUNT: '',
+                    STATUS: '계약중',
+                    BROKER_ID: '',
+                    ESTIMATED_COMPLETION_DATE: '',
+                    BALANCE_DATE: '',
+                    COMMISSION: '',
+                    REMARKS: ''
+                },
+                clients: [],
+                properties: [],
+                brokers: [],
+                contractId: ''
+            };
+        },
+        methods: {
+            fnCancel() {
+                window.location.href = "main.html?menu=contracts";
+            },
+            formatNumber(field) {
+                if(!this.info[field]) return;
+                let value = this.info[field].toString().replace(/\D/g,'');
+                this.info[field] = value.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+            },
+            fnFetchContract() {
+                const params = new URLSearchParams(window.location.search);
+                this.contractId = params.get('contractId') || '';
+                if(!this.contractId) return;
+
+                $.ajax({
+                    url: "http://localhost:3009/contracts/info",
+                    type: "GET",
+                    dataType: "json",
+                    data: { contractId: this.contractId },
+                    success: (data) => {
+                        this.info = data.info;
+                        // 금액, 수수료 숫자 포맷
+                        if(this.info.CONTRACT_AMOUNT) this.formatNumber('CONTRACT_AMOUNT');
+                        if(this.info.COMMISSION) this.formatNumber('COMMISSION');
+                    },
+                    error: (err) => {
+                        console.error(err);
+                        alert("계약 정보를 불러오지 못했습니다.");
+                    }
+                });
+            },
+            fnEditContract() {
+                // 숫자 콤마 제거 후 전송
+                const param = {
+                    ...this.info,
+                    CONTRACT_AMOUNT: this.info.CONTRACT_AMOUNT ? parseInt(this.info.CONTRACT_AMOUNT.replace(/,/g,''),10) : null,
+                    COMMISSION: this.info.COMMISSION ? parseInt(this.info.COMMISSION.replace(/,/g,''),10) : null,
+                    BROKER_ID: this.info.BROKER_ID || null
+                };
+
+                $.ajax({
+                    url: "http://localhost:3009/contracts/update",
+                    type: "GET",
+                    dataType: "json",
+                    data: param,
+                    success: () => {
+                        alert("계약 정보가 수정되었습니다!");
+                        window.location.href = "main.html?menu=contracts";
+                    },
+                    error: (err) => {
+                        console.error("Error updating contract", err);
+                        alert("수정 실패");
+                    }
+                });
+            },
+            fetchClientsAndBrokers() {
+                $.ajax({
+                    url: "http://localhost:3009/clients",
+                    type: "GET",
+                    dataType: "json",
+                    success: (data) => {
+                        this.clients = data.list.filter(c => c.ROLE === 30);
+                        this.brokers = data.list.filter(c => c.ROLE === 20);
+                    }
+                });
+            },
+            fetchProperties() {
+                $.ajax({
+                    url: "http://localhost:3009/properties",
+                    type: "GET",
+                    dataType: "json",
+                    success: (data) => {
+                        this.properties = data.list;
+                    }
+                });
+            }
+        },
+        mounted() {
+            this.fetchClientsAndBrokers();
+            this.fetchProperties();
+            this.fnFetchContract();
+        }
+    });
+
+    app.mount('#app');
+
+</script>

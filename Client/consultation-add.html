@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>상담 글 작성</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+    <style>
+        body { 
+            font-family: Arial; 
+            background:#f0f2f5; 
+            display:flex; 
+            justify-content:center; 
+            align-items:center; 
+            min-height:100vh; 
+        }
+        .container { 
+            background:#fff; 
+            padding:30px; 
+            border-radius:10px; 
+            box-shadow:0 4px 12px rgba(0,0,0,0.1); 
+            width:100%; 
+            max-width:500px; 
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .form-group { 
+            margin-bottom:15px; 
+        }
+        .form-group label { 
+            display:block; 
+            margin-bottom:5px; 
+            font-weight:bold; 
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width:100%; 
+            padding:10px; 
+            border:1px solid #ccc; 
+            border-radius:5px; 
+            box-sizing:border-box;
+        }
+        .form-group textarea {
+            min-height:120px;
+        }
+        .submit-btn { 
+            background:#3498db; 
+            color:#fff; 
+            padding:12px; 
+            border:none; 
+            border-radius:5px; 
+            cursor:pointer; 
+            width:100%; 
+            font-weight:bold; 
+            margin-top:10px;
+        }
+        .submit-btn:hover { 
+            background:#2980b9; 
+        }
+        .cancel-btn {
+            background: #fff;
+            color: #555;
+            border: 1px solid #ccc;
+            padding: 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px; 
+        }
+        .cancel-btn:hover {
+            background: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+<div id="app" class="container">
+    <h2>상담 글 작성</h2>
+    <form @submit.prevent="fnAddPost">
+        <div class="form-group">
+            <label>작성자</label>
+            <input type="text" v-model="writer" readonly>
+        </div>
+        <div class="form-group">
+            <label>게시글 종류</label>
+            <select v-model="postType" required>
+                <option value="">선택</option>
+                <option v-for="type in availableTypes" :key="type" :value="type">
+                    {{ type }}
+                </option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>글 내용</label>
+            <textarea v-model="contents" required></textarea>
+        </div>
+        <button type="submit" class="submit-btn">등록</button>
+        <button type="button" class="cancel-btn" @click="goBack">취소</button>
+    </form>
+</div>
+</body>
+</html>
+<script>
+    const app = Vue.createApp({
+        data() {
+            return {
+                writer: '',           
+                postType: '',         
+                contents: '',         
+                availableTypes: []    
+            }
+        },
+        methods: {
+            goBack() {
+                window.location.href = "main.html?menu=consultations";
+            },
+            fnAddPost() {
+                let self = this;
+                if(!self.postType || !self.contents) {
+                    alert("필수 항목을 입력해주세요.");
+                    return;
+                }
+
+                const param = {
+                    writer: self.writer,
+                    postType: self.postType,
+                    contents: self.contents
+                };
+
+                $.ajax({
+                    url: "http://localhost:3009/consultations/insert",
+                    type: "GET",
+                    dataType: "json",
+                    data: param,
+                    success: function(data){
+                        alert("글이 등록되었습니다!");
+                        window.location.href = "main.html?menu=consultations";
+                    },
+                    error: function(err){
+                        console.error(err);
+                        alert("등록 실패");
+                    }
+                });
+            },
+            setWriterAndTypes() {
+                let self = this;
+                const user = window.loginUser || null; 
+                if(!user) {
+                    self.writer = "비회원";
+                    self.availableTypes = ["문의"];
+                } else if(user.role === "관리자") {
+                    self.writer = "관리자";
+                    self.availableTypes = ["공지", "답변"];
+                } else {
+                    self.writer = user.nickname;
+                    this.availableTypes = ["문의"];
+                }
+            }
+        },
+        mounted() {
+            let self = this;
+            const params = new URLSearchParams(window.location.search);
+            const clientId = params.get('clientId');
+            self.setWriterAndTypes();
+
+            $.ajax({
+                url: "http://localhost:3009/client/info",
+                data: { clientId: clientId },
+                dataType: "json",
+                type: "GET",
+                success: (data) => {
+                    if (data && data.result === "success" && data.info) {
+                        self.writer = data.info.NICKNAME || data.info.NAME || "비회원";
+                    } else {
+                        self.writer = "비회원";
+                        alert("작성자 정보를 가져오지 못했습니다.");
+                    }
+                }
+            });
+                }
+    });
+
+    app.mount('#app');
+</script>
+

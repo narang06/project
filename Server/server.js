@@ -323,29 +323,41 @@ app.get('/client/update', async (req, res) => {
 
 // 매물 리스트
 app.get('/properties', async (req, res) => {
-  const { } = req.query;
-  let query = `SELECT PROPERTY_ID, ADDRESS, PROPERTY_TYPE, AREA, PRICE, STATUS FROM PROPERTIES ORDER BY PROPERTY_ID DESC`
-  try {
-    const result = await connection.execute(query);
-    const columnNames = result.metaData.map(column => column.name);
-    // 쿼리 결과를 JSON 형태로 변환
-    const rows = result.rows.map(row => {
-      // 각 행의 데이터를 컬럼명에 맞게 매핑하여 JSON 객체로 변환
-      const obj = {};
-      columnNames.forEach((columnName, index) => {
-        obj[columnName] = row[index];
-      });
-      return obj;
-    });
-    res.json({
-        result : "success",
-        list : rows
-    });
-  } catch (error) {
-    console.error('Error executing query', error);
-    res.status(500).send('Error executing query');
-  }
+    const { role, userId } = req.query; 
+
+    let query = `SELECT PROPERTY_ID, ADDRESS, PROPERTY_TYPE, AREA, PRICE, STATUS, SELLER_ID 
+                 FROM PROPERTIES`;
+
+    // 부동산 매매인일 경우 자신이 올린 매물만
+    if (role == 20) {
+        query += ` WHERE SELLER_ID = :userId`;
+    }
+
+    query += ` ORDER BY PROPERTY_ID DESC`;
+
+    try {
+        const binds = (role == 20) ? { userId } : {};
+        const result = await connection.execute(query, binds);
+        const columnNames = result.metaData.map(column => column.name);
+
+        const rows = result.rows.map(row => {
+            const obj = {};
+            columnNames.forEach((columnName, index) => {
+                obj[columnName] = row[index];
+            });
+            return obj;
+        });
+
+        res.json({
+            result: "success",
+            list: rows
+        });
+    } catch (error) {
+        console.error('Error executing query', error);
+        res.status(500).send('Error executing query');
+    }
 });
+
 
 // 매물 삭제
 app.get('/properties/delete', async (req, res) => {
@@ -506,6 +518,290 @@ app.get('/clients/sellers', async (req, res) => {
         res.status(500).send("서버 오류");
     }
 });
+
+// 계약 리스트
+app.get('/contracts', async (req, res) => {
+    const { userId, role } = req.query;
+
+    let query = `
+        SELECT 
+            C.CONTRACT_ID,
+            P.ADDRESS AS PROPERTY_ADDRESS,
+            CL.NAME AS CLIENT_NAME,
+            B.NAME AS BROKER_NAME,
+            C.STATUS,
+            C.CONTRACT_DATE
+        FROM CONTRACTS C
+        LEFT JOIN PROPERTIES P ON P.PROPERTY_ID = C.PROPERTY_ID
+        LEFT JOIN CLIENTS CL ON C.CLIENT_ID = CL.CLIENT_ID
+        LEFT JOIN CLIENTS B ON C.BROKER_ID = B.CLIENT_ID
+    `;
+
+    const binds = {};
+    if (role == 20) { // 부동산 매매인
+        query += ` WHERE C.BROKER_ID = :userId`;
+        binds.userId = Number(userId);
+    } else if (role == 30) { // 일반 회원
+        query += ` WHERE C.CLIENT_ID = :userId`;
+        binds.userId = Number(userId);
+    }
+    
+    query += ` ORDER BY C.CONTRACT_ID ASC`;
+
+    try {
+        const result = await connection.execute(query, binds);
+        const columnNames = result.metaData.map(col => col.name);
+        const rows = result.rows.map(row => {
+            const obj = {};
+            columnNames.forEach((colName, idx) => obj[colName] = row[idx]);
+            return obj;
+        });
+
+        res.json({
+            result: "success",
+            list: rows
+        });
+    } catch (error) {
+        console.error('Error executing query', error);
+        res.status(500).send('Error executing query');
+    }
+});
+
+// 계약 추가
+app.get('/contracts/insert', async (req, res) => {
+    const {
+        clientId,
+        propertyId,
+        contractDate,
+        contractAmount,
+        status,
+        commission,
+        brokerId,
+        estimatedCompletionDate,
+        balanceDate,
+        remarks
+    } = req.query;
+
+    try {
+        const query = `
+            INSERT INTO CONTRACTS 
+            (CONTRACT_ID, CLIENT_ID, PROPERTY_ID, CONTRACT_DATE, CONTRACT_AMOUNT, STATUS, COMMISSION, BROKER_ID, ESTIMATED_COMPLETION_DATE, BALANCE_DATE, REMARKS)
+            VALUES (
+                CONTRACTS_SEQ.NEXTVAL, 
+                :clientId, 
+                :propertyId, 
+                TO_DATE(:contractDate, 'YYYY-MM-DD'), 
+                :contractAmount, 
+                :status, 
+                :commission,
+                :brokerId,
+                :estimatedCompletionDate,
+                :balanceDate,
+                :remarks
+            )
+        `;
+
+        const params = {
+            clientId,
+            propertyId,
+            contractDate,
+            contractAmount,
+            status,
+            commission,
+            brokerId: brokerId || null,
+            estimatedCompletionDate: estimatedCompletionDate || null,
+            balanceDate: balanceDate || null,
+            remarks: remarks || null
+        };
+
+        await connection.execute(query, params, { autoCommit: true });
+
+        res.json({ result: "success" });
+    } catch (error) {
+        console.error('Error inserting contract', error);
+        res.status(500).send('Error inserting contract');
+    }
+});
+// 계약 정보
+app.get('/contracts/info', async (req, res) => {
+    const { contractId } = req.query;
+    const id = Number(contractId);
+
+    if (isNaN(id)) return res.status(400).send('Invalid contractId');
+
+    try {
+        const result = await connection.execute(`
+          SELECT 
+          C.CONTRACT_ID,
+          C.CLIENT_ID,
+          C.PROPERTY_ID,
+          TO_CHAR(C.CONTRACT_DATE, 'YYYY-MM-DD') AS CONTRACT_DATE,        
+          C.CONTRACT_AMOUNT,
+          TO_CHAR(C.ESTIMATED_COMPLETION_DATE, 'YYYY-MM-DD') AS ESTIMATED_COMPLETION_DATE, 
+          TO_CHAR(C.BALANCE_DATE, 'YYYY-MM-DD') AS BALANCE_DATE,        
+          C.STATUS,                                                         
+          C.COMMISSION,
+          C.BROKER_ID,
+          C.REMARKS,
+          CL.NAME AS "CLIENT_NAME",
+          P.ADDRESS AS "PROPERTY_ADDRESS",
+          P.PROPERTY_TYPE AS "PROPERTY_TYPE",
+          B.NAME AS "BROKER_NAME"
+          FROM CONTRACTS C
+          LEFT JOIN CLIENTS CL ON C.CLIENT_ID = CL.CLIENT_ID
+          LEFT JOIN PROPERTIES P ON C.PROPERTY_ID = P.PROPERTY_ID
+          LEFT JOIN CLIENTS B ON C.BROKER_ID = B.CLIENT_ID
+          WHERE C.CONTRACT_ID = :id`,
+          [id]
+        );
+
+        const columnNames = result.metaData.map(c => c.name);
+
+        const rows = result.rows.map(r => {
+            const obj = {};
+            columnNames.forEach((col, idx) => {
+                obj[col] = r[idx];
+            });
+            return obj;
+        });
+
+        res.json({
+            result: "success",
+            info: rows[0] || {}
+        });
+    } catch (error) {
+        console.error('Error fetching contract', error);
+        res.status(500).send('Error fetching contract');
+    }
+});
+// 계약 수정
+app.get('/contracts/update', async (req, res) => {
+    const { 
+        CONTRACT_ID,
+        CLIENT_ID,
+        PROPERTY_ID,
+        CONTRACT_DATE,
+        CONTRACT_AMOUNT,
+        STATUS,
+        BROKER_ID,
+        ESTIMATED_COMPLETION_DATE,
+        BALANCE_DATE,
+        COMMISSION,
+        REMARKS
+    } = req.query;
+
+    try {
+        const query = `
+            UPDATE CONTRACTS SET
+                CLIENT_ID = :CLIENT_ID,
+                PROPERTY_ID = :PROPERTY_ID,
+                CONTRACT_DATE = :CONTRACT_DATE,
+                CONTRACT_AMOUNT = :CONTRACT_AMOUNT,
+                STATUS = :STATUS,
+                BROKER_ID = :BROKER_ID,
+                ESTIMATED_COMPLETION_DATE = :ESTIMATED_COMPLETION_DATE,
+                BALANCE_DATE = :BALANCE_DATE,
+                COMMISSION = :COMMISSION,
+                REMARKS = :REMARKS
+            WHERE CONTRACT_ID = :CONTRACT_ID
+        `;
+
+        await connection.execute(
+            query,
+            {
+                CLIENT_ID,
+                PROPERTY_ID,
+                CONTRACT_DATE,
+                CONTRACT_AMOUNT,
+                STATUS,
+                BROKER_ID: BROKER_ID || null, // 빈값 허용
+                ESTIMATED_COMPLETION_DATE,
+                BALANCE_DATE,
+                COMMISSION,
+                REMARKS,
+                CONTRACT_ID
+            },
+            { autoCommit: true }
+        );
+
+        res.json({ result: "success" });
+    } catch (error) {
+        console.error("Error updating contract", error);
+        res.status(500).send("Error updating contract");
+    }
+});
+// 계약 삭제
+app.get('/contracts/delete', async (req, res) => {
+  const { contractId } = req.query;
+
+  try {
+    await connection.execute(
+      `DELETE FROM CONTRACTS WHERE CONTRACT_ID = '${contractId}'`,
+      [],
+      { autoCommit: true }
+    );
+    res.json({
+        result : "success"
+    });
+  } catch (error) {
+    console.error('Error executing insert', error);
+    res.status(500).send('Error executing insert');
+  }
+});
+
+// 상담 가져오기
+app.get('/consultations', async (req, res) => {
+    const { role, userId } = req.query;
+
+    try {
+        let query = `
+            SELECT 
+                c.CONSULTATION_ID,
+                c.CLIENT_ID,
+                c.PARENT_ID,
+                c.POST_TYPE,
+                c.TITLE,
+                c.CONTENTS,
+                c.POST_DATE,
+                c.STATUS,
+                NVL(cl.NICKNAME, '비회원') AS CLIENT_NICKNAME,
+                '관리자' AS CONSULTANT_NICKNAME
+            FROM CONSULTATIONS c
+            LEFT JOIN CLIENTS cl ON c.CLIENT_ID = cl.CLIENT_ID
+        `;
+
+        // 부동산 매매자(role 20)면 본인 글만 조회
+        if (role == 20) {
+            query += ` WHERE c.CLIENT_ID = :userId`;
+        }
+
+        query += ` ORDER BY c.CONSULTATION_ID DESC`;
+
+        const binds = (role == 20) ? { userId } : {};
+        const result = await connection.execute(query, binds);
+
+        const columnNames = result.metaData.map(col => col.name);
+
+        const rows = result.rows.map(row => {
+            const obj = {};
+            columnNames.forEach((colName, idx) => {
+                obj[colName] = row[idx];
+            });
+            return obj;
+        });
+
+        res.json({
+            result: "success",
+            list: rows
+        });
+
+    } catch (err) {
+        console.error('Error executing query', err);
+        res.status(500).json({ result: "error", message: err.message });
+    }
+});
+
+
 
 
 // 서버 시작
