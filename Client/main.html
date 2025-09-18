@@ -421,11 +421,30 @@
             
             <div v-else-if="currentMenu === 'consultations'" class="content-box">
                 <h2>고객 상담 게시판</h2>
-                
-                <div style="margin-bottom: 20px;">
-                    <button class="add-button" @click="goToWritePage">글 작성</button>
+
+                <!-- 관리자 공지 작성 버튼 -->
+                <div v-if="user.ROLE===10" style="margin-bottom:10px;">
+                    <button class="add-button" @click="fnAddConsultation('공지')">공지 작성</button>
                 </div>
-                
+
+                <!-- 문의 작성 버튼 (회원/매매자/비회원) -->
+                <div v-if="user.ROLE!==10 || !user" style="margin-bottom:10px;">
+                    <button class="add-button" @click="fnAddConsultation('문의')">문의 작성</button>
+                </div>
+
+                <!-- 검색 -->
+                <div class="search-box">
+                    <input type="text" v-model="consultationSearch.title" placeholder="제목 검색" class="search-input"/>
+                    <select v-model="consultationSearch.type" class="search-select">
+                        <option value="">전체</option>
+                        <option value="공지">공지</option>
+                        <option value="문의">문의</option>
+                        <option value="답변">답변</option>
+                    </select>
+                    <button class="add-button search-button" @click="fnSearchConsultations">검색</button>
+                    <button class="delete-button reset-button" @click="fnResetConsultationSearch">초기화</button>
+                </div>
+
                 <table class="full-width-table">
                     <thead>
                         <tr>
@@ -433,60 +452,45 @@
                             <th>제목</th>
                             <th>작성자</th>
                             <th>작성일</th>
-                            <th>상태</th>
+                            <th>타입</th>
                             <th>관리</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <template v-for="item in consultations" :key="item.CONSULTATION_ID">
-                            <!-- 문의글 / 부모글 -->
-                            <tr>
-                                <td>{{ item.CONSULTATION_ID }}</td>
-                                <td>
-                                    <a href="#" @click.prevent="viewConsultation(item.CONSULTATION_ID)">
-                                        {{ item.TITLE }}
-                                    </a>
-                                </td>
-                                <td>{{ item.CLIENT_NICKNAME || '비회원' }}</td>
-                                <td>{{ formattedDate(item.POST_DATE) }}</td>
-                                <td>{{ item.STATUS }}</td>
-                                <td>
-                                    <div class="consultation-buttons">
-                                        <!-- 관리자: 삭제/답변 가능 -->
-                                        <template v-if="user.ROLE===10">
-                                            <button class="action-button delete-button" @click="deleteConsultation(item)">삭제</button>
-                                            <button class="add-button consultation-reply-button" @click="replyConsultation(item)">답변</button>
-                                        </template>
-                                        <!-- 작성자 본인: 수정/삭제 -->
-                                        <template v-else-if="item.CLIENT_ID===user.CLIENT_ID">
-                                            <button class="action-button edit-button" @click="editConsultation(item)">수정</button>
-                                            <button class="action-button delete-button" @click="deleteConsultation(item)">삭제</button>
-                                        </template>
-                                    </div>
-                                </td>
-                            </tr>
+                        <tr v-for="consult in filteredConsultations" :key="consult.CONSULTATION_ID">
+                            <td>{{ consult.CONSULTATION_ID }}</td>
+                            <td>
+                                <a href="#" @click.prevent="fnViewConsultation(consult.CONSULTATION_ID)">
+                                    {{ consult.TITLE }}
+                                </a>
+                            </td>
+                            <td>{{ consult.WRITER_NAME || '비회원' }}</td>
+                            <td>{{ formattedDate(consult.POST_DATE) }}</td>
+                            <td>{{ consult.POST_TYPE }}</td>
+                            <td class="consultation-buttons">
+                                <!-- 수정 버튼 -->
+                                <button 
+                                    v-if="canEdit(consult)" 
+                                    class="action-button edit-button" 
+                                    @click="fnEditConsultation(consult)">
+                                    수정
+                                </button>
 
-                            <!-- 답변글 / 자식글 -->
-                            <tr v-for="reply in getReplies(item.CONSULTATION_ID)" :key="reply.CONSULTATION_ID">
-                                <td style="padding-left:30px;">↳ {{ reply.CONSULTATION_ID }}</td>
-                                <td>
-                                    <a href="#" @click.prevent="viewConsultation(reply.CONSULTATION_ID)">
-                                        {{ reply.TITLE }}
-                                    </a>
-                                </td>
-                                <td>{{ reply.CONSULTANT_NICKNAME || '관리자' }}</td>
-                                <td>{{ formattedDate(reply.POST_DATE) }}</td>
-                                <td>{{ reply.STATUS }}</td>
-                                <td>
-                                    <div class="consultation-buttons">
-                                        <template v-if="user.ROLE===10">
-                                            <button class="action-button edit-button" @click="editConsultation(reply)">수정</button>
-                                            <button class="action-button delete-button" @click="deleteConsultation(reply)">삭제</button>
-                                        </template>
-                                    </div>
-                                </td>
-                            </tr>
-                        </template>
+                                <!-- 삭제 버튼 -->
+                                <button 
+                                    v-if="canDelete(consult)" 
+                                    class="action-button delete-button" 
+                                    @click="fnRemoveConsultation(consult)">
+                                    삭제
+                                </button>
+                                <button 
+                                    v-if="canApply(consult)" 
+                                    class="add-button consultation-reply-button" 
+                                    @click="fnAddReply(consult)">
+                                    답변
+                                </button>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -521,16 +525,14 @@
                     {id: 'propertySearch', name: '매물 검색', roles: [20, 30]},
                     {id: 'contracts', name: '계약 관리', roles: [10,20,30]},
                     {id: 'consultations', name: '고객 상담 게시판', roles: [10, 20, 30]},
-                    // {id: 'tax', name: '세금 계산기', roles: [10, 20, 30]},
                     {id: 'schedule', name: '일정 관리', roles: [10, 20, 30]},
-                    // {id: 'stats', name: '통계/리포트', roles: [10]},
                     {id: 'settings', name: '개인정보 설정', roles: [10, 20, 30]}
                 ],
                 currentMenu: '',
                 user: null,
                 totalMembers: 0,
                 totalProperties: 0,
-                dailyconsultations: 0,
+                dailyconsultations: 0, // 유지 가능, 화면 카드용
                 onGoingContracts: 0,
                 members: [],
                 brokers: [],
@@ -542,7 +544,9 @@
                 propertySearch: { address: '', type: '', price: '' },
                 contractSearch: { address: '', brokerName: '', status: '' },
                 filteredContracts: [],
-                consultations: [],           
+                consultationSearch: { title: '', type: '' },
+                consultations: [],                             
+                filteredConsultations: []    
             }
         },
         computed: {
@@ -563,24 +567,13 @@
         },
         watch: {
             currentMenu(newVal) {
-                let self = this;
-                if(newVal === 'consultations') {
-                    self.fetchConsultations();
-                }
-                if (newVal === 'members') self.fnList();
-                else if (newVal === 'properties') self.fnPropertyList();
-                else if (newVal === 'propertySearch') {
-                    // 초기 로딩 시 항상 전체 매물 보여주기
-                    self.filteredProperties = self.allProperties.slice();
-                } else if (newVal === 'contracts') {
-                    // 관리자 들어올 때 전체 계약 보여주기
-                    if(self.user.ROLE === 10) {
-                        self.fnContractList(true); // true = 초기화용 flag
-                    }
-                }
+                if (newVal === 'members') this.fnList();
+                else if (newVal === 'properties') this.fnPropertyList();
+                else if (newVal === 'propertySearch') this.filteredProperties = this.allProperties.slice();
+                else if (newVal === 'contracts' && this.user.ROLE === 10) this.fnContractList(true);
             }
         },
-        methods: {    
+        methods: {   
             // 날짜
             formattedDate(dateStr) {
                 if (!dateStr) return '';
@@ -844,75 +837,82 @@
             fnViewContract:function(contractId){ 
                 window.location.href="contract-detail.html?contractId="+contractId; 
             },
-            // 상담글 목록 가져오기
-            fetchConsultations() {
+            // -------------------------------------------------------------------상담
+            fnConsultationInfo: function () {
                 let self = this;
                 $.ajax({
                     url: "http://localhost:3009/consultations",
                     dataType: "json",
                     type: "GET",
-                    success(data) {
+                    data:{},
+                    success: function (data) {      
+                        console.log("상담 게시판 데이터 확인:", data);      
                         self.consultations = data.list || [];
+                        self.filteredConsultations = data.list.slice();
                     }
                 });
             },
-            // 상담 글쓰기 페이지 이동
-            goToWritePage() {
-                let self = this;
-                const currentUser = self.user; 
-                const url = `consultation-add.html?clientId=${currentUser.CLIENT_ID}`;
-                window.location.href = url;
-            },    
-            // 상담 글 상세 보기
-            viewConsultation(consultationId) {
-                window.location.href = `consultation-detail.html?consultationId=${consultationId}`;
-            },
-            // 문의글/답변 수정/삭제 가능 여부 체크
-            canEditDelete(item) {
-                // 관리자 = 모든 글 가능, 작성자 본인 = 가능
-                return this.user.ROLE===10 || (item.CLIENT_ID && item.CLIENT_ID === this.user.CLIENT_ID);
-            },
-            // 답변글 가져오기
-            getReplies(parentId) {
-                return this.consultations.filter(c => c.PARENT_ID === parentId);
-            },
-            // 상담 글 수정
-            editConsultation(item) {
-                window.location.href = `consultation-edit.html?consultationId=${item.CONSULTATION_ID}`;
-            },
-            // 상담 글 삭제
-            deleteConsultation(item) {
-                let self = this;
-                if(!confirm("정말 삭제하시겠습니까?")) return;
-                $.ajax({
-                    url: "http://localhost:3009/consultations/delete",
-                    type: "GET",
-                    dataType: "json",
-                    data: { consultationId: item.CONSULTATION_ID },
-                    success: () => {
-                        alert("삭제되었습니다.");
-                        self.fetchConsultations();
-                    }
+            fnSearchConsultations() {
+                const title = this.consultationSearch.title.toLowerCase();
+                const type = this.consultationSearch.type;
+                this.filteredConsultations = this.consultations.filter(c=>{
+                    const matchTitle = !title || (c.TITLE && c.TITLE.toLowerCase().includes(title));
+                    const matchType = !type || c.POST_TYPE===type;
+                    return matchTitle && matchType;
                 });
             },
-            // 답변 작성 (관리자 전용)
-            replyConsultation(item) {
-                window.location.href = `consultation-reply.html?parentId=${item.CONSULTATION_ID}`;
-            }
+            fnResetConsultationSearch() {
+                this.consultationSearch = { title:'', type:'' };
+                this.filteredConsultations = this.consultations.slice();
+            },
+            // 글 작성
+            fnAddConsultation(type) {
+                window.location.href = `consultation-add.html?type=${type}`;
+            },
+            // 글 보기
+            fnViewConsultation(consultId) {
+                window.location.href = `consultation-detail.html?id=${consultId}`;
+            },
+            // 글 수정/삭제 권한 체크
+            canEdit(consult) {
+                // 관리자: 공지, 본인 글, 또는 답변 글 수정 가능
+                if (this.user.ROLE === 10) {
+                    return consult.TYPE === '공지' || consult.WRITER_ID === this.user.CLIENT_ID || consult.POST_TYPE === '답변';
+                }
+
+                // 일반 회원 / 부동산 매매자: 본인 글만 수정 가능
+                return consult.WRITER_ID === this.user.CLIENT_ID;
+            },
+            canDelete(consult) {
+                // 관리자: 모든 글 삭제 가능
+                if (this.user.ROLE === 10) return true;
+
+                // 일반 회원 / 부동산 매매자: 본인 글만 삭제 가능
+                return consult.WRITER_ID === this.user.CLIENT_ID;
+            },
+            canApply(consult) {
+                // 관리자인 경우 모든 문의글에 답변 가능
+                return this.user && this.user.ROLE === 10 && consult.POST_TYPE === '문의';
+            },
+            // 글 수정
+            fnEditConsultation(consult) {
+                // 수정 모달이나 페이지로 이동
+                // 비회원이면 비밀번호 입력 로직 추가 가능
+                console.log('수정:', consult);
+            },
+            // 글 삭제
+            fnRemoveConsultation(consult) {
+                if(!confirm('정말 삭제하시겠습니까?')) return;
+                // 삭제 요청
+                console.log('삭제:', consult);
+            }    
         }, // 끝
         mounted() { // 시작하자마자 실행
             let self = this;
             self.fnLoginInfo();
             self.fnList();
             self.fnPropertyList();
-           
-            const params = new URLSearchParams(window.location.search);
-            if(params.get('address') || params.get('type') || params.get('price')) {
-                self.propertySearch.address = params.get('address') || '';
-                self.propertySearch.type = params.get('type') || '';
-                self.propertySearch.price = params.get('price') || '';
-                self.fnSearchProperties();
-            }
+            self.fnConsultationInfo();
         }
     });
     app.mount('#app');

@@ -499,8 +499,6 @@ app.get('/properties/info', async (req, res) => {
   }
 });
 
-
-
 // 부동산 매매자 검색
 app.get('/clients/sellers', async (req, res) => {
     try {
@@ -748,45 +746,35 @@ app.get('/contracts/delete', async (req, res) => {
     res.status(500).send('Error executing insert');
   }
 });
-
-// 상담 가져오기
+// 상담 리스트
 app.get('/consultations', async (req, res) => {
-    const { role, userId } = req.query;
-
     try {
-        let query = `
+        const query = `
             SELECT 
                 c.CONSULTATION_ID,
                 c.CLIENT_ID,
                 c.PARENT_ID,
-                c.POST_TYPE,
                 c.TITLE,
                 c.CONTENTS,
                 c.POST_DATE,
-                c.STATUS,
-                NVL(cl.NICKNAME, '비회원') AS CLIENT_NICKNAME,
-                '관리자' AS CONSULTANT_NICKNAME
+                c.POST_TYPE,
+                c.PASSWORD,
+                CASE
+                    WHEN c.CLIENT_ID IS NOT NULL THEN cl.NICKNAME
+                    WHEN c.PARENT_ID IS NOT NULL THEN '관리자'
+                    ELSE '비회원'
+                END AS WRITER_NAME
             FROM CONSULTATIONS c
             LEFT JOIN CLIENTS cl ON c.CLIENT_ID = cl.CLIENT_ID
+            ORDER BY c.POST_DATE DESC
         `;
 
-        // 부동산 매매자(role 20)면 본인 글만 조회
-        if (role == 20) {
-            query += ` WHERE c.CLIENT_ID = :userId`;
-        }
-
-        query += ` ORDER BY c.CONSULTATION_ID DESC`;
-
-        const binds = (role == 20) ? { userId } : {};
-        const result = await connection.execute(query, binds);
+        const result = await connection.execute(query, []);
 
         const columnNames = result.metaData.map(col => col.name);
-
         const rows = result.rows.map(row => {
             const obj = {};
-            columnNames.forEach((colName, idx) => {
-                obj[colName] = row[idx];
-            });
+            columnNames.forEach((colName, idx) => obj[colName] = row[idx]);
             return obj;
         });
 
@@ -795,154 +783,11 @@ app.get('/consultations', async (req, res) => {
             list: rows
         });
 
-    } catch (err) {
-        console.error('Error executing query', err);
-        res.status(500).json({ result: "error", message: err.message });
-    }
-});
-
-// 상담 글 추가
-app.get('/consultations/insert', async (req, res) => {
-  const { title, contents, postType, clientId } = req.query;
-
-  try {
-      // 글 상태 설정
-      let status = "상담대기"; 
-      if (postType === "답변" || postType === "공지") {
-        status = "답변완료";
-      }
-
-      const query = `
-        INSERT INTO CONSULTATIONS
-        (CONSULTATION_ID, TITLE, CLIENT_ID, POST_TYPE, CONTENTS, POST_DATE, STATUS, CATEGORY, CONSULTANT_ID, PARENT_ID)
-        VALUES
-        (CONSULTATIONS_SEQ.NEXTVAL, :title, :clientId, :postType, :contents, SYSDATE, :status, :category, :consultantId, :parentId)
-      `;
-
-      await connection.execute(query, {
-          writerId: writerId || null,
-          postType,
-          category: category || "기타",
-          contents,
-          status,
-          parentId: parentId || null
-      }, { autoCommit: true });
-
-      res.json({ result: "success" });
-  } catch (error) {
-      console.error('Error inserting consultation', error);
-      res.status(500).send('Error inserting consultation');
-    }
-});
-// 상담 글 수정
-app.get('/consultations/update', async (req, res) => {
-    const { 
-        consultationId,
-        title,
-        postType,
-        category,
-        contents,
-        status
-    } = req.query;
-
-    if (!consultationId) return res.status(400).send("consultationId가 필요합니다.");
-
-    try {
-        const query = `
-            UPDATE CONSULTATIONS SET
-                TITLE = :TITLE,
-                POST_TYPE = :POST_TYPE,
-                CATEGORY = :CATEGORY,
-                CONTENTS = :CONTENTS,
-                STATUS = :STATUS
-            WHERE CONSULTATION_ID = :CONSULTATION_ID
-        `;
-
-        await connection.execute(
-            query,
-            {
-                TITLE: title,
-                POST_TYPE: postType,
-                CATEGORY: category || "기타",
-                CONTENTS: contents,
-                STATUS: status || "상담대기",
-                CONSULTATION_ID: Number(consultationId)
-            },
-            { autoCommit: true }
-        );
-
-        res.json({ result: "success" });
     } catch (error) {
-        console.error("Error updating consultation", error);
-        res.status(500).send("Error updating consultation");
+        console.error('Error executing query', error);
+        res.status(500).send('Error executing query');
     }
 });
-
-// 상담 정보
-app.get('/consultations/info', async (req, res) => {
-  const { consultationId } = req.query;
-
-  const id = Number(consultationId);
-  if (isNaN(id)) {
-    return res.status(400).send('Invalid consultationId');
-  }
-
-  try {
-    const query = `
-      SELECT
-        C.CONSULTATION_ID,
-        C.TITLE,
-        C.POST_TYPE,
-        C.CONTENTS,
-        C.CATEGORY,
-        TO_CHAR(C.POST_DATE, 'YYYY-MM-DD HH24:MI:SS') AS "POST_DATE",
-        C.STATUS,
-        -- 문의글 작성자(고객)의 닉네임
-        CL.NICKNAME AS "CLIENT_NICKNAME",
-        -- 답변글 작성자(관리자)의 닉네임
-        CO.NICKNAME AS "CONSULTANT_NICKNAME"
-      FROM CONSULTATIONS C
-      LEFT JOIN CLIENTS CL ON C.CLIENT_ID = CL.CLIENT_ID
-      LEFT JOIN CLIENTS CO ON C.CONSULTANT_ID = CO.CLIENT_ID
-      WHERE C.CONSULTATION_ID = :id
-    `;
-    
-    const result = await connection.execute(
-      query,
-      { id },
-      // 이전에 언급했던 outFormat 설정을 명시합니다.
-      { outFormat: oracledb.OUT_FORMAT_OBJECT }
-    );
-
-    res.json({
-      result: "success",
-      info: result.rows[0] || null
-    });
-
-  } catch (error) {
-    console.error('Error executing query', error);
-    res.status(500).send('Error executing query');
-  }
-});
-// 상담 글 삭제
-app.get('/consultations/delete', async (req, res) => {
-  const { contractId } = req.query;
-
-  try {
-    await connection.execute(
-      `DELETE FROM CONSULTATIONS WHERE CONSULTATION_ID = '${consultationId}'`,
-      [],
-      { autoCommit: true }
-    );
-    res.json({
-        result : "success"
-    });
-  } catch (error) {
-    console.error('Error executing insert', error);
-    res.status(500).send('Error executing insert');
-  }
-});
-
 
 // 서버 시작
 app.listen(3009, () => {

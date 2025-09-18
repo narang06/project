@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>상담 글 작성</title>
+    <title>상담 게시판 글 작성</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
     <style>
@@ -22,10 +22,6 @@
             width:100%; 
             max-width:500px; 
         }
-        h2 {
-            text-align: center;
-            margin-bottom: 20px;
-        }
         .form-group { 
             margin-bottom:15px; 
         }
@@ -41,9 +37,6 @@
             border-radius:5px; 
             box-sizing:border-box;
         }
-        .form-group textarea {
-            min-height:120px;
-        }
         .submit-btn { 
             background:#3498db; 
             color:#fff; 
@@ -53,7 +46,6 @@
             cursor:pointer; 
             width:100%; 
             font-weight:bold; 
-            margin-top:10px;
         }
         .submit-btn:hover { 
             background:#2980b9; 
@@ -73,40 +65,49 @@
         }
     </style>
 </head>
-<body>
 <div id="app" class="container">
-    <h2>상담 글 작성</h2>
-    <form @submit.prevent="fnAddPost">
+    <h2>게시글 작성</h2>
+    <form @submit.prevent="fnAddConsultation">
+        <!-- 작성자 -->
         <div class="form-group">
             <label>작성자</label>
-            <input type="text" v-model="writer" readonly>
+            <input type="text" :value="writerName" readonly>
         </div>
+
+        <!-- 게시판 종류 -->
         <div class="form-group">
-            <label>글 제목</label>
-            <input type="text" v-model="title" maxlength="50" required placeholder="제목을 입력하세요">
-        </div>   
+            <label>게시판 종류</label>
+            <input type="text" :value="postType" readonly>
+        </div>
+
+        <!-- 제목 -->
         <div class="form-group">
-            <label>게시글 종류</label>
-            <select v-model="postType" required>
-                <option value="">선택</option>
-                <option v-for="type in availableTypes" :key="type" :value="type">
-                    {{ type }}
-                </option>
+            <label>제목</label>
+            <input type="text" v-model="title" required>
+        </div>
+
+        <!-- 카테고리 (문의일때만 선택 가능) -->
+        <div class="form-group">
+            <label>카테고리</label>
+            <select v-model="category" :disabled="postType !== '문의'">
+                <option value="기타">기타</option>
+                <option value="매매">매매</option>
+                <option value="전세/월세">전세/월세</option>
             </select>
         </div>
-        <div class="form-group" v-if="postType === '문의'">
-            <label>문의 유형</label>
-            <select v-model="category" required>
-                <option value="">선택</option>
-                <option v-for="type in availableCategories" :key="type" :value="type">
-                    {{ type }}
-                </option>
-            </select>
-        </div>
+
+        <!-- 내용 -->
         <div class="form-group">
-            <label>글 내용</label>
-            <textarea v-model="contents" maxlength="2000" required></textarea>
+            <label>내용</label>
+            <textarea v-model="contents" rows="6" required></textarea>
         </div>
+
+        <!-- 비회원 비밀번호 -->
+        <div class="form-group" v-if="isGuest">
+            <label>비밀번호</label>
+            <input type="password" v-model="password" required>
+        </div>
+
         <button type="submit" class="submit-btn">등록</button>
         <button type="button" class="cancel-btn" @click="goBack">취소</button>
     </form>
@@ -118,41 +119,45 @@
         data() {
             return {
                 title: '',
-                writer: '',           
-                postType: '',         
                 contents: '',
-                category: '',        
-                availableTypes: [], 
-                availableCategories: ["매물관련", "계약/금융관련", "기타 문의"]   
+                category: '기타',
+                password: '',
+                writerName: '',
+                postType: '',
+                isGuest: false,
+                clientId: null,
+                parentId: null
             }
         },
         methods: {
             goBack() {
                 window.location.href = "main.html?menu=consultations";
             },
-            // 글 추가
-            fnAddPost() {
-                let self = this;
-                if(!self.postType || !self.contents) {
-                    alert("필수 항목을 입력해주세요.");
+            fnAddConsultation() {
+                const self = this;
+                if (!self.title || !self.contents || (self.isGuest && !self.password)) {
+                    alert("필수 항목을 모두 입력해주세요.");
                     return;
                 }
 
                 const param = {
-                    writer: self.writer,
-                    postType: self.postType,
-                    contents: self.contents,
                     title: self.title,
-                    category: self.category
+                    contents: self.contents,
+                    category: self.category,
+                    postType: self.postType,
+                    clientId: self.clientId,
+                    parentId: self.parentId,
+                    password: self.isGuest ? self.password : null
                 };
 
                 $.ajax({
                     url: "http://localhost:3009/consultations/insert",
-                    type: "GET",
+                    type: "POST",
                     dataType: "json",
-                    data: param,
+                    contentType: "application/json",
+                    data: JSON.stringify(param),
                     success: function(data){
-                        alert("글이 등록되었습니다!");
+                        alert("등록되었습니다!");
                         window.location.href = "main.html?menu=consultations";
                     },
                     error: function(err){
@@ -161,54 +166,35 @@
                     }
                 });
             },
-            setWriterAndTypes(user) {
-                let self = this;
-                if (!user) {
-                    self.writer = "비회원";
-                    self.availableTypes = ["문의"];
+            fetchLoginInfo() {
+                // 로그인 정보 가져오기 (예: 세션/쿠키 API 호출)
+                // 여기서는 예시로 localStorage 사용
+                const user = JSON.parse(localStorage.getItem("loginUser"));
+                if(user){
+                    this.writerName = user.NICKNAME;
+                    this.clientId = user.CLIENT_ID;
+                    this.parentId = user.ROLE === 10 ? user.CLIENT_ID : null; // 관리자 parentId 설정
+                    this.isGuest = false;
                 } else {
-                    const role = user.role || user.ROLE;
-                    const nickname = user.nickName || user.NICKNAME || user.NAME;
+                    this.writerName = '비회원';
+                    this.isGuest = true;
+                }
 
-                    if (role === 10 || role === "10") { // 관리자
-                        self.writer = nickname;
-                        self.availableTypes = ["공지", "답변"];
-                    } else {
-                        self.writer = nickname;
-                        self.availableTypes = ["문의"];
-                    }
+                // postType 결정 (URL 파라미터로 전달)
+                const urlParams = new URLSearchParams(window.location.search);
+                const type = urlParams.get('type');
+                if(['공지','답변','문의'].includes(type)){
+                    this.postType = type;
+                } else {
+                    this.postType = '문의';
                 }
             }
         },
         mounted() {
-            let self = this;
-            const params = new URLSearchParams(window.location.search);
-            const clientId = params.get('clientId');
-
-            // 기본값 먼저
-            self.setWriterAndTypes(null);
-
-            // 실제 사용자 정보 가져오기
-            $.ajax({
-                url: "http://localhost:3009/client/info",
-                data: { clientId: clientId },
-                dataType: "json",
-                type: "GET",
-                success: (data) => {
-                    if (data && data.result === "success" && data.info) {
-                        self.setWriterAndTypes(data.info);
-                    } else {
-                        self.writer = "비회원";
-                        alert("작성자 정보를 가져오지 못했습니다.");
-                    }
-                },
-                error: (err) => {
-                    console.error("client/info 호출 실패:", err);
-                    self.writer = "비회원";
-                }
-            });
+            this.fetchLoginInfo();
         }
     });
 
     app.mount('#app');
 </script>
+
