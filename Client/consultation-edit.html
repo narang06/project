@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>상담 글 작성</title>
+    <title>상담 글 수정</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
     <style>
@@ -75,39 +75,35 @@
 </head>
 <body>
 <div id="app" class="container">
-    <h2>상담 글 작성</h2>
-    <form @submit.prevent="fnAddPost">
+    <h2>상담 글 수정</h2>
+    <form @submit.prevent="fnEditPost">
         <div class="form-group">
             <label>작성자</label>
-            <input type="text" v-model="writer" readonly>
+            <input type="text" v-model="info.writer" readonly>
         </div>
         <div class="form-group">
             <label>글 제목</label>
-            <input type="text" v-model="title" maxlength="50" required placeholder="제목을 입력하세요">
-        </div>   
+            <input type="text" v-model="info.TITLE" required maxlength="50" placeholder="제목을 입력하세요">
+        </div>
         <div class="form-group">
             <label>게시글 종류</label>
-            <select v-model="postType" required>
-                <option value="">선택</option>
+            <select v-model="info.POST_TYPE" required>
                 <option v-for="type in availableTypes" :key="type" :value="type">
                     {{ type }}
                 </option>
             </select>
         </div>
-        <div class="form-group" v-if="postType === '문의'">
+        <div class="form-group" v-if="info.POST_TYPE === '문의'">
             <label>문의 유형</label>
-            <select v-model="category" required>
-                <option value="">선택</option>
-                <option v-for="type in availableCategories" :key="type" :value="type">
-                    {{ type }}
-                </option>
+            <select v-model="info.CATEGORY" required>
+                <option v-for="cat in availableCategories" :key="cat" :value="cat">{{ cat }}</option>
             </select>
         </div>
         <div class="form-group">
             <label>글 내용</label>
-            <textarea v-model="contents" maxlength="2000" required></textarea>
+            <textarea v-model="info.CONTENTS" required maxlength="2000" placeholder="내용을 입력하세요"></textarea>
         </div>
-        <button type="submit" class="submit-btn">등록</button>
+        <button type="submit" class="submit-btn">수정 완료</button>
         <button type="button" class="cancel-btn" @click="goBack">취소</button>
     </form>
 </div>
@@ -117,96 +113,98 @@
     const app = Vue.createApp({
         data() {
             return {
-                title: '',
-                writer: '',           
-                postType: '',         
-                contents: '',
-                category: '',        
-                availableTypes: [], 
-                availableCategories: ["매물관련", "계약/금융관련", "기타 문의"]   
+                info: {},
+                availableTypes: [],
+                availableCategories: ["매물관련", "계약/금융관련", "기타 문의"],
+                consultationId: ""
             }
         },
         methods: {
             goBack() {
                 window.location.href = "main.html?menu=consultations";
             },
-            // 글 추가
-            fnAddPost() {
+            setWriterAndTypes(user){
                 let self = this;
-                if(!self.postType || !self.contents) {
-                    alert("필수 항목을 입력해주세요.");
-                    return;
-                }
-
-                const param = {
-                    writer: self.writer,
-                    postType: self.postType,
-                    contents: self.contents,
-                    title: self.title,
-                    category: self.category
-                };
-
-                $.ajax({
-                    url: "http://localhost:3009/consultations/insert",
-                    type: "GET",
-                    dataType: "json",
-                    data: param,
-                    success: function(data){
-                        alert("글이 등록되었습니다!");
-                        window.location.href = "main.html?menu=consultations";
-                    },
-                    error: function(err){
-                        console.error(err);
-                        alert("등록 실패");
-                    }
-                });
-            },
-            setWriterAndTypes(user) {
-                let self = this;
-                if (!user) {
-                    self.writer = "비회원";
+                if(!user){
+                    self.info.writer = "비회원";
                     self.availableTypes = ["문의"];
                 } else {
                     const role = user.role || user.ROLE;
                     const nickname = user.nickName || user.NICKNAME || user.NAME;
 
-                    if (role === 10 || role === "10") { // 관리자
-                        self.writer = nickname;
+                    self.info.writer = nickname || "비회원";
+
+                    if(role === 10 || role === "10"){
                         self.availableTypes = ["공지", "답변"];
                     } else {
-                        self.writer = nickname;
                         self.availableTypes = ["문의"];
                     }
                 }
+            },
+            fnEditPost() {
+                const self = this;
+                if(!self.info.TITLE  || !self.info.CONTENTS){
+                    alert("필수 항목을 입력해주세요.");
+                    return;
+                }
+
+                const param = {
+                    consultationId: self.consultationId, 
+                    title: self.info.TITLE, 
+                    postType: self.info.POST_TYPE, 
+                    category: self.info.CATEGORY,
+                    contents: self.info.CONTENTS, 
+                    status: self.info.STATUS || "상담대기"
+                };
+
+                console.log(param);
+
+                $.ajax({
+                    url: "http://localhost:3009/consultations/update",
+                    type: "GET",
+                    dataType: "json",
+                    data: param,
+                    success: function(data){
+                        alert("글이 수정되었습니다!");
+                        window.location.href = "main.html?menu=consultations";
+                    },
+                    error: function(err){
+                        console.error(err);
+                        alert("수정 실패");
+                    }
+                });
+            },
+            fetchPostInfo(){
+                const self = this;
+                $.ajax({
+                    url: "http://localhost:3009/consultations/info",
+                    type: "GET",
+                    dataType: "json",
+                    data: { consultationId : self.consultationId },
+                    success: function(data){
+                        if(data && data.result === "success" && data.info){            
+                            self.info = data.info;
+
+                            self.setWriterAndTypes({
+                                role: data.info.CLIENT_ROLE || 0,
+                                nickName: data.info.CLIENT_NICKNAME
+                            });
+                        }
+                    },
+                    error: function(err){
+                        console.error("consultations/info 호출 실패:", err);
+                    }
+                });
             }
         },
-        mounted() {
+        mounted(){
             let self = this;
             const params = new URLSearchParams(window.location.search);
-            const clientId = params.get('clientId');
-
-            // 기본값 먼저
-            self.setWriterAndTypes(null);
-
-            // 실제 사용자 정보 가져오기
-            $.ajax({
-                url: "http://localhost:3009/client/info",
-                data: { clientId: clientId },
-                dataType: "json",
-                type: "GET",
-                success: (data) => {
-                    if (data && data.result === "success" && data.info) {
-                        self.setWriterAndTypes(data.info);
-                    } else {
-                        self.writer = "비회원";
-                        alert("작성자 정보를 가져오지 못했습니다.");
-                    }
-                },
-                error: (err) => {
-                    console.error("client/info 호출 실패:", err);
-                    self.writer = "비회원";
-                }
-            });
+            const consultationId = params.get('consultationId');
+            if (consultationId) {
+                self.consultationId = consultationId;
+                self.fetchPostInfo();
+            }
         }
     });
 

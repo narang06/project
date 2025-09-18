@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>상담 글 상세 보기</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f0f2f5;
+        }
+        .detail-container {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .detail-container h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .detail-row {
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+        .detail-row label {
+            font-weight: bold;
+            margin-right: 5px;
+        }
+        .detail-container button {
+            margin-top: 20px;
+            padding: 10px 15px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .detail-content {
+            white-space: pre-wrap;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="detail-container">
+        <h2>상담 글 상세 보기</h2>
+        <div v-if="post">
+            <div class="detail-row"><label>제목:</label>{{ post.TITLE }}</div>
+            <div class="detail-row"><label>작성자:</label>{{ getWriter(post) }}</div>
+            <div class="detail-row"><label>게시글 종류:</label>{{ post.POST_TYPE }}</div>
+            <div class="detail-row" v-if="post.CATEGORY"><label>문의 유형:</label>{{ post.CATEGORY }}</div>
+            <div class="detail-row"><label>작성일:</label>{{ formattedDate(post.POST_DATE) }}</div>
+            <div class="detail-row"><label>상태:</label>{{ post.STATUS }}</div>
+            <hr>
+            <div class="detail-row"><label>내용:</label></div>
+            <div class="detail-content">{{ post.CONTENTS }}</div>
+        </div>
+        <div v-else>
+            <p>상담 글 정보를 불러오는 중입니다...</p>
+        </div>
+        <button @click="goBack">목록으로</button>
+    </div>
+</body>
+</html>
+<script>
+    const app = Vue.createApp({
+        data() {
+            return {
+                post: null,
+            };
+        },
+        methods: {
+            formattedDate(dateStr) {
+                if (!dateStr) return '';
+                const date = new Date(dateStr);
+                return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+            },
+            goBack() {
+                window.location.href = 'main.html?menu=consultations';
+            },
+            getWriter(post) {
+                if (post.CONSULTANT_NICKNAME) {
+                    return post.CONSULTANT_NICKNAME;
+                }
+                if (post.CLIENT_NICKNAME) {
+                    return post.CLIENT_NICKNAME;
+                }
+                return '비회원';
+            },
+            fetchPostInfo() {
+                const self = this;
+                const params = new URLSearchParams(window.location.search);
+                const consultationId = params.get('consultationId');
+    
+                if (!consultationId) {
+                    alert('잘못된 접근입니다.');
+                    self.goBack();
+                    return;
+                }
+
+                $.ajax({
+                    url: "http://localhost:3009/consultations/info",
+                    data: { consultationId: consultationId },
+                    type: "GET",
+                    dataType: "json",
+                    success: (data) => {
+                        if (data.info) {
+                            self.post = data.info;
+                        } else {
+                            alert("상담 글 정보를 가져오지 못했습니다.");
+                            self.goBack();
+                        }
+                    },
+                    error: (err) => {
+                        console.error(err);
+                        alert("상담 글 정보를 불러오는 데 실패했습니다.");
+                        self.goBack();
+                    }
+                });
+            }
+        },
+        mounted() {
+            let self = this;
+            self.fetchPostInfo();
+        }
+    });
+    app.mount('#app');
+</script>

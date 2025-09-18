@@ -447,7 +447,6 @@
                                         {{ item.TITLE }}
                                     </a>
                                 </td>
-                                {{ console.log(item) }}
                                 <td>{{ item.CLIENT_NICKNAME || '비회원' }}</td>
                                 <td>{{ formattedDate(item.POST_DATE) }}</td>
                                 <td>{{ item.STATUS }}</td>
@@ -492,10 +491,10 @@
                 </table>
             </div>
 
-            <div v-else-if="currentMenu === 'tax'" class="content-box">
+            <!-- <div v-else-if="currentMenu === 'tax'" class="content-box">
                 <h2>세금 계산기</h2>
                 <p>세금 계산기 페이지</p>
-            </div>
+            </div> -->
             <div v-else-if="currentMenu === 'schedule'" class="content-box">
                 <h2>일정 관리</h2>
                 <p>일정 관리 페이지</p>
@@ -522,9 +521,9 @@
                     {id: 'propertySearch', name: '매물 검색', roles: [20, 30]},
                     {id: 'contracts', name: '계약 관리', roles: [10,20,30]},
                     {id: 'consultations', name: '고객 상담 게시판', roles: [10, 20, 30]},
-                    {id: 'tax', name: '세금 계산기', roles: [10, 20, 30]},
+                    // {id: 'tax', name: '세금 계산기', roles: [10, 20, 30]},
                     {id: 'schedule', name: '일정 관리', roles: [10, 20, 30]},
-                    {id: 'stats', name: '통계/리포트', roles: [10]},
+                    // {id: 'stats', name: '통계/리포트', roles: [10]},
                     {id: 'settings', name: '개인정보 설정', roles: [10, 20, 30]}
                 ],
                 currentMenu: '',
@@ -857,16 +856,16 @@
                     }
                 });
             },
-            // 글쓰기 페이지 이동
+            // 상담 글쓰기 페이지 이동
             goToWritePage() {
                 let self = this;
                 const currentUser = self.user; 
                 const url = `consultation-add.html?clientId=${currentUser.CLIENT_ID}`;
                 window.location.href = url;
             },    
-            // 글 상세 보기
-            viewConsultation(id) {
-                window.location.href = `consultation-detail.html?consultationId=${id}`;
+            // 상담 글 상세 보기
+            viewConsultation(consultationId) {
+                window.location.href = `consultation-detail.html?consultationId=${consultationId}`;
             },
             // 문의글/답변 수정/삭제 가능 여부 체크
             canEditDelete(item) {
@@ -877,12 +876,13 @@
             getReplies(parentId) {
                 return this.consultations.filter(c => c.PARENT_ID === parentId);
             },
-            // 글 수정
+            // 상담 글 수정
             editConsultation(item) {
                 window.location.href = `consultation-edit.html?consultationId=${item.CONSULTATION_ID}`;
             },
-            // 글 삭제
+            // 상담 글 삭제
             deleteConsultation(item) {
+                let self = this;
                 if(!confirm("정말 삭제하시겠습니까?")) return;
                 $.ajax({
                     url: "http://localhost:3009/consultations/delete",
@@ -891,7 +891,7 @@
                     data: { consultationId: item.CONSULTATION_ID },
                     success: () => {
                         alert("삭제되었습니다.");
-                        this.fetchConsultations();
+                        self.fetchConsultations();
                     }
                 });
             },
@@ -908,10 +908,10 @@
            
             const params = new URLSearchParams(window.location.search);
             if(params.get('address') || params.get('type') || params.get('price')) {
-                this.propertySearch.address = params.get('address') || '';
-                this.propertySearch.type = params.get('type') || '';
-                this.propertySearch.price = params.get('price') || '';
-                this.fnSearchProperties();
+                self.propertySearch.address = params.get('address') || '';
+                self.propertySearch.type = params.get('type') || '';
+                self.propertySearch.price = params.get('price') || '';
+                self.fnSearchProperties();
             }
         }
     });
