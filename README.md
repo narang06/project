@@ -23,30 +23,29 @@
      ## 기술 스택
 
  - **프론트엔드**:
-    - HTML
-   - CSS
-     - JavaScript
-      - **Vue.js (v3)**
-      - **jQuery** (AJAX 통신)
+   ![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=flat-square&logo=html5&logoColor=white)
+   ![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=flat-square&logo=css3&logoColor=white)
+   ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black)
+   ![Vue.js](https://img.shields.io/badge/Vue.js-4FC08D?style=flat-square&logo=vuedotjs&logoColor=white)
+   ![jQuery](https://img.shields.io/badge/jQuery-0769AD?style=flat-square&logo=jquery&logoColor=white)
   - **백엔드**:
-   - **Node.js**
-   - **Express.js**
-   - **데이터베이스**:
-    - **Oracle Database**
+  ![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=nodedotjs&logoColor=white)
+   ![Express.js](https://img.shields.io/badge/Express.js-000000?style=flat-square&logo=express&logoColor=white)
+   ![Oracle](https://img.shields.io/badge/Oracle-F80000?style=flat-square&logo=oracle&logoColor=white)
  
- ## 프로젝트 구조
-  /
-  ├── Client/           # 프론트엔드 파일
-  │   ├── index.html    # 로그인 및 메인 페이지
-  │   ├── main.html     # 로그인 후 대시보드 및 관리 페이지
-  │   ├── *.html        # 각 기능별 상세/수정/추가 페이지
-  │   └── ...
-  ├── Server/           # 백엔드 서버 파일
-  │   ├── server.js     # Express 메인 서버 로직
-  │   ├── db.js         # Oracle DB 연결 설정
-  │   ├── package.json  # Node.js 의존성 관리
-  │   └── ...
-  └── .gitignore
+## 프로젝트 구조
+/  
+├── Client/       # 프론트엔드 파일  
+│   ├── index.html    # 로그인 및 메인 페이지  
+│   ├── main.html     # 로그인 후 대시보드 및 관리 페이지  
+│   ├── *.html        # 각 기능별 상세/수정/추가 페이지  
+│   └── ...  
+├── Server/       # 백엔드 서버 파일  
+│   ├── server.js     # Express 메인 서버 로직  
+│   ├── db.js         # Oracle DB 연결 설정  
+│   ├── package.json  # Node.js 의존성 관리  
+│   └── ...  
+└── .gitignore  
 
   ## 실행 방법
     
