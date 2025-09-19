@@ -59,6 +59,18 @@
  
         (또는 `nodemon server.js`를 사용하면 코드 변경 시 서버가 자동으로 재시작됩니다.)
        "Server is running on port 3009" 메시지가 표시되면 성공입니다.
+
+   ### 2. 백엔드 실행
+
+1.  프로젝트의 `Server` 디렉터리로 이동합니다.
+   
+2.  Node.js 패키지(Express, Oracle DB 드라이버 등)를 설치합니다.
+   
+3.  서버를 시작합니다.
+   
+    `nodemon server.js`를 사용하면 코드 변경 시 서버가 자동으로 재시작됩니다.
+
+"Server is running on port 3009" 메시지가 표시되면 성공입니다.
    
   ### 3. 프론트엔드 실행
  
