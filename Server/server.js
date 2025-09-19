@@ -746,48 +746,95 @@ app.get('/contracts/delete', async (req, res) => {
     res.status(500).send('Error executing insert');
   }
 });
-// 상담 리스트
-app.get('/consultations', async (req, res) => {
-    try {
-        const query = `
-            SELECT 
-                c.CONSULTATION_ID,
-                c.CLIENT_ID,
-                c.PARENT_ID,
-                c.TITLE,
-                c.CONTENTS,
-                c.POST_DATE,
-                c.POST_TYPE,
-                c.PASSWORD,
-                CASE
-                    WHEN c.CLIENT_ID IS NOT NULL THEN cl.NICKNAME
-                    WHEN c.PARENT_ID IS NOT NULL THEN '관리자'
-                    ELSE '비회원'
-                END AS WRITER_NAME
-            FROM CONSULTATIONS c
-            LEFT JOIN CLIENTS cl ON c.CLIENT_ID = cl.CLIENT_ID
-            ORDER BY c.POST_DATE DESC
-        `;
+// // 상담 리스트
+// app.get('/consultations', async (req, res) => {
+//     try {
+//         const query = `
+//             SELECT 
+//                 c.CONSULTATION_ID,
+//                 c.CLIENT_ID,
+//                 c.PARENT_ID,
+//                 c.TITLE,
+//                 c.CONTENTS,
+//                 c.POST_DATE,
+//                 c.POST_TYPE,
+//                 c.PASSWORD,
+//                 CASE
+//                     WHEN c.CLIENT_ID IS NOT NULL THEN cl.NICKNAME
+//                     WHEN c.PARENT_ID IS NOT NULL THEN '관리자'
+//                     ELSE '비회원'
+//                 END AS WRITER_NAME
+//             FROM CONSULTATIONS c
+//             LEFT JOIN CLIENTS cl ON c.CLIENT_ID = cl.CLIENT_ID
+//             ORDER BY c.POST_DATE DESC
+//         `;
 
-        const result = await connection.execute(query, []);
+//         const result = await connection.execute(query, []);
 
-        const columnNames = result.metaData.map(col => col.name);
-        const rows = result.rows.map(row => {
-            const obj = {};
-            columnNames.forEach((colName, idx) => obj[colName] = row[idx]);
-            return obj;
-        });
+//         const columnNames = result.metaData.map(col => col.name);
+//         const rows = result.rows.map(row => {
+//             const obj = {};
+//             columnNames.forEach((colName, idx) => obj[colName] = row[idx]);
+//             return obj;
+//         });
 
-        res.json({
-            result: "success",
-            list: rows
-        });
+//         res.json({
+//             result: "success",
+//             list: rows
+//         });
 
-    } catch (error) {
-        console.error('Error executing query', error);
-        res.status(500).send('Error executing query');
-    }
-});
+//     } catch (error) {
+//         console.error('Error executing query', error);
+//         res.status(500).send('Error executing query');
+//     }
+// });
+
+// // 상담 글 추가
+// app.get('/consultations/insert', async (req, res) => {
+//     const {
+//         clientId,      // 회원이면 값, 관리자/비회원이면 null
+//         parentId,      // 답변일 경우 부모글 ID
+//         postType,      // '문의', '답변', '공지'
+//         title,
+//         contents,
+//         password       // 비회원 글일 때만 필요
+//     } = req.query;
+
+//     try {
+//         const query = `
+//             INSERT INTO CONSULTATIONS 
+//             (CONSULTATION_ID, CLIENT_ID, PARENT_ID, POST_TYPE, TITLE, CONTENTS, POST_DATE, STATUS, PASSWORD)
+//             VALUES (
+//                 CONSULTATIONS_SEQ.NEXTVAL,
+//                 :clientId,
+//                 :parentId,
+//                 :postType,
+//                 :title,
+//                 :contents,
+//                 SYSDATE,
+//                 '상담대기',
+//                 :password
+//             )
+//         `;
+
+//         // 비회원이면 password 필수, 회원/관리자는 null
+//         const params = {
+//             clientId: clientId || null,
+//             parentId: parentId || null,
+//             postType: postType || '문의',
+//             title: title || null,
+//             contents: contents || null,
+//             password: (!clientId && !parentId) ? (password || '1234') : null
+//         };
+
+//         await connection.execute(query, params, { autoCommit: true });
+
+//         res.json({ result: "success" });
+//     } catch (error) {
+//         console.error('Error inserting consultation', error);
+//         res.status(500).send('Error inserting consultation');
+//     }
+// });
 
 // 서버 시작
 app.listen(3009, () => {

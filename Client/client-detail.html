@@ -70,15 +70,29 @@ const app = Vue.createApp({
     data() {
         return {
             member: {},
-            roleMapping: {10:'관리자', 20:'매매자', 30:'일반 고객'}
+            roleMapping: {10:'관리자', 20:'매매자', 30:'일반 고객'},
+            searchParams: {} 
         };
     },
     methods: {
         goBack() {
-            window.history.back();
+            let self = this;
+            const listPage = 'main.html';
+            const params = new URLSearchParams();
+
+            if (self.searchParams.key) {
+                params.set('key', self.searchParams.key);
+            }
+            if (self.searchParams.keyword) {
+                params.set('keyword', self.searchParams.keyword);
+            }
+            
+            params.set('menu', 'members');
+
+            window.location.href = `${listPage}?${params.toString()}`;
         },
         // 성별
-        formattedGender(gender) {      
+        formattedGender(gender) {
             if (gender === 'M') return "남성";
             if (gender === 'F') return "여성";
             return "미정";
@@ -92,7 +106,10 @@ const app = Vue.createApp({
             let self = this;
             const params = new URLSearchParams(window.location.search);
             const clientId = params.get('clientId');
-            if (!clientId) return;
+            if (!clientId) {
+                alert("회원 정보가 없습니다.");
+                return;
+            }
 
             $.ajax({
                 url: "http://localhost:3009/client/info",
@@ -113,7 +130,14 @@ const app = Vue.createApp({
         }
     },
     mounted() {
-        this.fetchMemberInfo();
+        let self = this;
+        const params = new URLSearchParams(window.location.search);
+        self.searchParams = {
+            key: params.get('key'),
+            keyword: params.get('keyword')
+        };
+        
+        self.fetchMemberInfo();
     }
 });
 

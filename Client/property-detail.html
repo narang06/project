@@ -69,15 +69,31 @@
         },
         methods: {
             goBack() {
-                window.history.back();
+                // 현재 URL에서 검색 조건을 추출
+                const params = new URLSearchParams(window.location.search);
+                const listPage = 'property-list.html';
+                const queryParams = new URLSearchParams();
+
+                // property-list.html로 돌아갈 때 필요한 검색 조건만 복사
+                const key = params.get('key');
+                const keyword = params.get('keyword');
+                const address = params.get('address');
+                const type = params.get('type');
+                const price = params.get('price');
+
+                if (key) queryParams.set('key', key);
+                if (keyword) queryParams.set('keyword', keyword);
+                if (address) queryParams.set('address', address);
+                if (type) queryParams.set('type', type);
+                if (price) queryParams.set('price', price);
+
+                window.location.href = `${listPage}?${queryParams.toString()}`;
             },
             formattedValue(value) {
                 return value ? value : "미정";
             },
             formattedDate(value) {
                 if (!value) return "미정";
-
-                // 날짜 형식이면 yyyy-mm-dd만 추출
                 if (!isNaN(Date.parse(value))) {
                     const date = new Date(value);
                     const yyyy = date.getFullYear();
@@ -87,18 +103,16 @@
                 }
                 return value;
             },
-
             formatPrice(value) {
-            if (!value) return '';
-            const eok = Math.floor(value / 100000000); 
-            const rest = value % 100000000;
-            const man = Math.floor(rest / 10000); 
-            let result = '';
-            if (eok > 0) result += eok + '억';
-            if (man > 0) result += ' ' + man + '만원';
-            return result.trim();
+                if (!value) return '';
+                const eok = Math.floor(value / 100000000);
+                const rest = value % 100000000;
+                const man = Math.floor(rest / 10000);
+                let result = '';
+                if (eok > 0) result += eok + '억';
+                if (man > 0) result += ' ' + man + '만원';
+                return result.trim();
             },
-            // 회원 정보 조회
             fetchpropertieInfo() {
                 let self = this;
                 const params = new URLSearchParams(window.location.search);

@@ -217,10 +217,10 @@
                         <h3>총 매물 현황</h3>
                         <p>{{ totalProperties }}건</p>
                     </div>
-                    <div class="dashboard-card">
+                    <!-- <div class="dashboard-card">
                         <h3>오늘 올라온 상담글</h3>
                         <p>{{ dailyconsultations }}건</p>
-                    </div>
+                    </div> -->
                     <div class="dashboard-card">
                         <h3>현재 진행중인 계약</h3>
                         <p>{{ onGoingContracts }}건</p>
@@ -499,7 +499,7 @@
                 <h2>세금 계산기</h2>
                 <p>세금 계산기 페이지</p>
             </div> -->
-            <div v-else-if="currentMenu === 'schedule'" class="content-box">
+            <!-- <div v-else-if="currentMenu === 'schedule'" class="content-box">
                 <h2>일정 관리</h2>
                 <p>일정 관리 페이지</p>
             </div>
@@ -510,7 +510,7 @@
             <div v-else-if="currentMenu === 'settings'" class="content-box">
                 <h2>개인정보 설정</h2>
                 <p>개인정보 설정 페이지</p>
-            </div>
+            </div> -->
         </div>
     </div>
 </body>
@@ -524,9 +524,9 @@
                     {id: 'properties', name: '매물 관리', roles: [10, 20]},
                     {id: 'propertySearch', name: '매물 검색', roles: [20, 30]},
                     {id: 'contracts', name: '계약 관리', roles: [10,20,30]},
-                    {id: 'consultations', name: '고객 상담 게시판', roles: [10, 20, 30]},
-                    {id: 'schedule', name: '일정 관리', roles: [10, 20, 30]},
-                    {id: 'settings', name: '개인정보 설정', roles: [10, 20, 30]}
+                    // {id: 'consultations', name: '고객 상담 게시판', roles: [10, 20, 30]},
+                    // {id: 'schedule', name: '일정 관리', roles: [10, 20, 30]},
+                    // {id: 'settings', name: '개인정보 설정', roles: [10, 20, 30]}
                 ],
                 currentMenu: '',
                 user: null,

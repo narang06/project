@@ -139,7 +139,7 @@
             <div class="public-menu">
                 <h2>로그인 없이 이용 가능한 메뉴</h2>
                 <a href="property-list.html">매물 정보</a>
-                <a href="#">고객 상담</a>
+                <!-- <a href="#">고객 상담</a> -->
                 <!-- <a href="#">세금 계산기</a> -->
             </div>
 
@@ -181,14 +181,21 @@
                         type: "GET",
                         data: param,
                         success: function (data) {
-                            console.log(data);
-                            if(data == "") { 
-                                alert("로그인 정보를 다시 확인해주세요.")
+                            if (data == "") { 
+                                alert("로그인 정보를 다시 확인해주세요.");
                             } else { 
-                                alert(data[0].NAME +"님 로그인 되었습니다.") 
+                                const userInfo = {
+                                    clientId: data[0].CLIENT_ID,
+                                    name: data[0].NAME,
+                                    nickname: data[0].NICKNAME,
+                                    role: data[0].ROLE,  
+                                    status: data[0].STATUS
+                                };                
+                                sessionStorage.setItem("loginUser", JSON.stringify(userInfo));
                                 sessionStorage.setItem("sessionId", data[0].CLIENT_ID);
-                                sessionStorage.setItem("sessionStatus", data[0].STATUS);
-                                location.href="main.html"; 
+
+                                alert(userInfo.name + "님 로그인 되었습니다."); 
+                                location.href = "main.html"; 
                             }
                         }
                     });
@@ -196,7 +203,6 @@
 
         },
         mounted() {
-            console.log('Vue mounted');
         }
     });
     app.mount('#app');
